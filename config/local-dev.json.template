@@ -4,7 +4,7 @@
 	"url": "http://localhost:4000",
 	"schemes": "http",
 	"services": {
-		"pagerduty": "https://pagerduty.com/api"
+		"pagerduty": "https://pagerduty.com"
 	},
 	"_vcap_application": {
 		"application_uris":["localhost:4000"]

@@ -41,8 +41,99 @@ var header = {};
 var authenticationTokens = [];
 var mockUserArray = [];
 
-// TODO
+var pagerduty_service = {};
+pagerduty_service.name = "testPagerDuty" + new Date().valueOf();
 
+test('PagerDuty Broker - Test Setup', function (t) {
+    mockUserArray = nconf.get('userArray');
+
+    t.plan(mockUserArray.length * 2);
+
+    for(var i = 0; i < mockUserArray.length; i++) (function(i) {
+        tiamUtils.authenticateTestUserWithTIAM (function(accessToken) {
+            tiamUtils.getProfile (accessToken, function(err, profile) {
+                t.equal(err, null, 'Was authenticate test user with TIAM successful?');
+                authenticationTokens[i] = accessToken;
+                if(typeof authenticationTokens[0] !== 'undefined' && i === 0) {
+                    header.Authorization = authenticationTokens[0];
+                }
+                t.pass('Authentication succeeded for mock user: ' + mockUserArray[i].testusername);
+            });
+        }, i);
+    } (i));
+});
+
+//Authentication testing
+test('PagerDuty Broker - Test Authentication', function (t) {
+    t.plan(4);
+
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {
+        'service_id': 'pagerduty',
+        'organization_guid': nconf.get('test_app_org_guid')
+    };
+    var auth = {
+        'Authorization': ''
+    };
+
+    putRequest(url, {header: null, body: JSON.stringify(body)})
+        .then(function(resultNoHeader) {
+            t.equal(resultNoHeader.statusCode, 401, 'did the authentication request with no Auth header fail?');
+
+            putRequest(url, {header: auth, body: JSON.stringify(body)})
+                .then(function(resultNoToken) {
+                    t.equal(resultNoToken.statusCode, 401, 'did the authentication request with an empty Auth header fail?');
+                });
+                auth.Authorization = 'token';
+                putRequest(url, {header: auth, body: JSON.stringify(body)})
+                    .then(function(resultNoBearer) {
+                        t.equal(resultNoBearer.statusCode, 401, 'did the authentication request with no bearer in the Auth header fail?');
+                    });
+                    auth.Authorization = 'BEARER token';
+                    putRequest(url, {header: auth, body: JSON.stringify(body)})
+                    .then(function(resultInvalidToken) {
+                        t.equal(resultInvalidToken.statusCode, 401, 'did the authentication request an invalid token in the Auth header fail?');
+                    });
+    });
+});
+
+test('PagerDuty Broker - Test PUT instance', function (t) {
+    t.plan(5);
+
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+
+    putRequest(url, {header: header, body: null})
+        .then(function(resultNoBody) {
+            t.equal(resultNoBody.statusCode, 400, 'did the put instance call with no body fail?');
+            body.service_id = 'pagerduty';
+
+            putRequest(url, {header: header, body: JSON.stringify(body)})
+                .then(function(resultNoOrg) {
+                    t.equal(resultNoOrg.statusCode, 400, 'did the put instance call with no service id fail?');
+                    body.organization_guid = nconf.get('test_app_org_guid');
+                    
+                    body.parameters = {
+                    	api_token: nconf.get("pagerduty-token"),
+                    	pagerduty_service_name: pagerduty_service.name
+                    }
+                    
+                    //t.comment(pagerduty_service_name);
+                    
+                    putRequest(url, {header: header, body: JSON.stringify(body)})
+                        .then(function(results) {
+                            t.equal(results.statusCode, 200, 'did the put instance call succeed?');
+                            t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+                            pagerduty_service.id = results.body.instance_id;
+                            
+                            //t.comment(pagerduty_service.id);
+                            
+                            // Ensure PagerDuty service has been created
+                            // TODO                          
+                        });
+                });
+    });
+});
 
 // Utility functions
 
