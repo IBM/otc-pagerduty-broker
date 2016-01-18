@@ -41,8 +41,12 @@ var header = {};
 var authenticationTokens = [];
 var mockUserArray = [];
 
-var pagerduty_service = {};
-pagerduty_service.name = "testPagerDuty" + new Date().valueOf();
+var currentTime = new Date().valueOf();
+var pagerduty = {};
+pagerduty.service_name = "testPagerDuty" + currentTime;
+pagerduty.user_name = "Test User" + currentTime;
+pagerduty.user_email= "user" + currentTime + "@ibm.com";
+pagerduty.user_phone = "+1 555 123 4567";
 
 test('PagerDuty Broker - Test Setup', function (t) {
     mockUserArray = nconf.get('userArray');
@@ -115,7 +119,10 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
                     
                     body.parameters = {
                     	api_token: nconf.get("pagerduty-token"),
-                    	pagerduty_service_name: pagerduty_service.name
+                    	service_name: pagerduty.service_name,
+                    	user_name: pagerduty.user_name,
+                    	user_email: pagerduty.user_email,
+                    	user_phone: pagerduty.user_phone
                     }
                     
                     //t.comment(pagerduty_service_name);
@@ -124,14 +131,45 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
                         .then(function(results) {
                             t.equal(results.statusCode, 200, 'did the put instance call succeed?');
                             t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
-                            pagerduty_service.id = results.body.instance_id;
+                            pagerduty.service_id = results.body.instance_id;
                             
-                            //t.comment(pagerduty_service.id);
+                            //t.comment(pagerduty.service_id);
                             
                             // Ensure PagerDuty service has been created
-                            // TODO                          
+                            var dashboardUrl = results.body.dashboard_url;
+                            getRequest(dashboardUrl, {})
+                              .then(function(getResults) {
+                                  t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
+                            });
                         });
                 });
+    });
+});
+
+//Monitoring endpoints
+test('PagerDuty Broker - Test GET status', function (t) {
+    t.plan(1);
+
+    var url = nconf.get('url') + '/status';
+    getRequest(url, {header: null})
+        .then(function(results) {
+            t.equal(results.statusCode, 200, 'did the get status call succeed?');
+    });
+});
+
+test('PagerDuty Broker - Test GET version', function (t) {
+    t.plan(1);
+
+    var url = nconf.get('url') + '/version';
+    getRequest(url, {header: null})
+        .then(function(results) {
+            // Try to get the build number from the pipeline environment variables, otherwise the value is undefined.
+            var buildID = process.env.BUILD_NUMBER;
+            if(buildID) {
+                t.equal(JSON.parse(results.body).build, buildID, 'did the get version call succeed?');
+            } else {
+                t.equal(results.statusCode, 200, 'did the get version call succeed?');
+            }
     });
 });
 
