@@ -47,7 +47,8 @@ var pagerduty = {};
 pagerduty.service_name = "testPagerDuty" + currentTime;
 pagerduty.user_name = "Test User" + currentTime;
 pagerduty.user_email= "user" + currentTime + "@ibm.com";
-pagerduty.user_phone = "+1 555 123 4567";
+pagerduty.user_phone_country = '33';
+pagerduty.user_phone_number = "123456789";
 var pagerdutyApiToken = nconf.get("pagerduty-token");
 var pagerdutyApiUrl = nconf.get("services:pagerduty") + "/api/v1";
 var postServiceInstanceParameters = {
@@ -55,7 +56,7 @@ var postServiceInstanceParameters = {
 	service_name: pagerduty.service_name,
 	user_name: pagerduty.user_name,
 	user_email: pagerduty.user_email,
-	user_phone: pagerduty.user_phone
+	user_phone: "+" + pagerduty.user_phone_country + " " + pagerduty.user_phone_number
 };
 
 test('PagerDuty Broker - Test Setup', function (t) {
@@ -112,7 +113,7 @@ test('PagerDuty Broker - Test Authentication', function (t) {
 });
 
 test('PagerDuty Broker - Test PUT instance', function (t) {
-    t.plan(13);
+    t.plan(18);
 
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
@@ -139,7 +140,7 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
                             
                             //t.comment(pagerduty.service_id);
                             
-                            // Ensure PagerDuty service has been created
+                            // Ensure PagerDuty service and user hasve been created
                             assertServiceAndUser(pagerduty, t);
                             
                             // Ensure dashboard url is accessible
@@ -200,14 +201,26 @@ function assertServiceAndUser(pagerduty, t) {
     		json: true,
     		headers: pagerdutyHeaders
     	}, function(err, reqRes, body) {
-    		 t.equal(reqRes.statusCode, 200, 'did the get escalation policy call succeed?');
-    		 t.equal(body.escalation_policy.escalation_rules.length, 1, 'was only 1 escalation rule found?');
-    		 var escalation_rule = body.escalation_policy.escalation_rules[0];
-    		 t.equal(escalation_rule.targets.length, 1, 'was only 1 target user found?');
-    		 var target = escalation_rule.targets[0];
-    		 t.equal(target.name, pagerduty.user_name, 'was the correct user name used?');
-    		 t.equal(target.email, pagerduty.user_email, 'was the correct user email used?');
-    		 // TODO: check phone
+			t.equal(reqRes.statusCode, 200, 'did the get escalation policy call succeed?');
+			t.equal(body.escalation_policy.escalation_rules.length, 1, 'was only 1 escalation rule found?');
+			var escalation_rule = body.escalation_policy.escalation_rules[0];
+			t.equal(escalation_rule.targets.length, 1, 'was only 1 target user found?');
+			var target = escalation_rule.targets[0];
+			t.equal(target.name, pagerduty.user_name, 'was the correct user name used?');
+			t.equal(target.email, pagerduty.user_email, 'was the correct user email used?');
+			var contact_method_url = pagerdutyApiUrl + "/users/" + target.id + "/contact_methods";
+			request.get({
+				uri: contact_method_url,
+				json: true,
+				headers: pagerdutyHeaders
+			}, function(err, reqRes, body) {
+				t.equal(reqRes.statusCode, 200, 'did the get contact methods call succeed?');
+				t.equal(body.total, 2, 'were 2 contact methods found?');
+				var contact_method = body.contact_methods[1];
+				t.equal(contact_method.type, "phone", 'is the contact method\'s type phone?');
+				t.equal(contact_method.country_code, Number(pagerduty.user_phone_country), 'is the contact method\'s country right?');
+				t.equal(contact_method.phone_number, pagerduty.user_phone_number, 'is the contact method\'s phone number right?');
+			});
     	});
         
 	});
