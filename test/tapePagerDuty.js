@@ -12,7 +12,8 @@ var nconf = require('nconf'),
     Q = require('q'),
     request = require("request"),
     tiamUtils = require('./tiamTestUtils.js'),
-    test = require('tape')
+    test = require('tape'),
+    _ = require('underscore')
 ;
 
 nconf.env("__");
@@ -46,18 +47,11 @@ var currentTime = new Date().valueOf();
 var pagerduty = {};
 pagerduty.service_name = "testPagerDuty" + currentTime;
 pagerduty.user_name = "Test User" + currentTime;
-pagerduty.user_email= "user" + currentTime + "@ibm.com";
+pagerduty.user_email = "user" + currentTime + "@ibm.com";
 pagerduty.user_phone_country = '33';
 pagerduty.user_phone_number = "123456789";
 var pagerdutyApiToken = nconf.get("pagerduty-token");
 var pagerdutyApiUrl = nconf.get("services:pagerduty") + "/api/v1";
-var postServiceInstanceParameters = {
-	api_token: pagerdutyApiToken,
-	service_name: pagerduty.service_name,
-	user_name: pagerduty.user_name,
-	user_email: pagerduty.user_email,
-	user_phone: "+" + pagerduty.user_phone_country + " " + pagerduty.user_phone_number
-};
 
 test('PagerDuty Broker - Test Setup', function (t) {
     mockUserArray = nconf.get('userArray');
@@ -128,7 +122,7 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
                     t.equal(resultNoOrg.statusCode, 400, 'did the put instance call with no service id fail?');
                     body.organization_guid = nconf.get('test_app_org_guid');
                     
-                    body.parameters = postServiceInstanceParameters;
+                    body.parameters = getPostServiceInstanceParameters(pagerduty);
                     
                     //t.comment(pagerduty_service_name);
                     
@@ -136,11 +130,8 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
                         .then(function(results) {
                             t.equal(results.statusCode, 200, 'did the put instance call succeed?');
                             t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
-                            pagerduty.service_id = results.body.instance_id;
                             
-                            //t.comment(pagerduty.service_id);
-                            
-                            // Ensure PagerDuty service and user hasve been created
+                            // Ensure PagerDuty service and user have been created
                             assertServiceAndUser(pagerduty, t);
                             
                             // Ensure dashboard url is accessible
@@ -150,6 +141,47 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
                             });
                         });
                 });
+    });
+});
+
+test('PagerDuty Broker - Test PUT instance with names being prefix of existing ones', function (t) {
+    t.plan(17);
+    
+    var pagerduty2 = _.clone(pagerduty);
+    pagerduty2.service_name += " 2 Suffix";
+    pagerduty2.user_name += " 2 Suffix";
+    pagerduty2.user_email = "user" + currentTime + "_2_suffix@ibm.com";
+
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+    body.service_id = 'pagerduty';
+    body.organization_guid = nconf.get('test_app_org_guid');
+    body.parameters = getPostServiceInstanceParameters(pagerduty2);;
+
+    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+        t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
+
+        var pagerduty3 = _.clone(pagerduty);
+        pagerduty3.service_name += " 2";
+	    pagerduty3.user_name += " 2";
+	    pagerduty3.user_email = "user" + currentTime + "_2@ibm.com";
+	
+	    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+	    body.parameters = getPostServiceInstanceParameters(pagerduty3);;
+	
+	    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+	        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
+	        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+	        
+	        // Ensure PagerDuty service and user have been created
+	        assertServiceAndUser(pagerduty3, t);
+	        
+	        // Ensure dashboard url is accessible
+	        var dashboardUrl = results.body.dashboard_url;
+	        getRequest(dashboardUrl, {}) .then(function(getResults) {
+	            t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
+	        });
+	    });
     });
 });
 
@@ -192,8 +224,18 @@ function assertServiceAndUser(pagerduty, t) {
 		headers: pagerdutyHeaders
 	}, function(err, reqRes, body) {
         t.equal(reqRes.statusCode, 200, 'did the get service call succeed?');
-        t.equal(body.services.length, 1, 'was only 1 service found?');
-        var escalation_policy = body.services[0].escalation_policy;
+        var service;
+        if (body.services) {
+	        for (var i=0; i<body.services.length; i++){
+	        	var currentService = body.services[i];
+	        	if (currentService.name == pagerduty.service_name) {
+	        		service = currentService;
+	        		break;
+	        	}
+	        }
+        }
+        t.ok(service, 'was a service found?');
+        var escalation_policy = service.escalation_policy;
         t.equal(escalation_policy.name, "Call " + pagerduty.user_name, 'was the right escalation policy created?');
         var escalation_policy_url = pagerdutyApiUrl + "/escalation_policies/" + escalation_policy.id;
     	request.get({
@@ -224,6 +266,16 @@ function assertServiceAndUser(pagerduty, t) {
     	});
         
 	});
+}
+
+function getPostServiceInstanceParameters(pagerduty) {
+	return {
+		api_token: pagerdutyApiToken,
+		service_name: pagerduty.service_name,
+		user_name: pagerduty.user_name,
+		user_email: pagerduty.user_email,
+		user_phone: "+" + pagerduty.user_phone_country + " " + pagerduty.user_phone_number
+	};
 }
 
 function initializeRequestParams(url, options) {
