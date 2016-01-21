@@ -149,6 +149,8 @@ function configureAppSync(db) {
 		next();
 	})
 
+	.use("/pagerduty-broker/event/v1", require("./lib/event/event"))
+
 	.use("/pagerduty-broker/api/v1/service_instances", require("./lib/middleware/service_instances"))
 	.get("/pagerduty-broker", function (req, res/*, next*/) {
 		db.view("pagerduty", "service_instances", function (err, r) {
