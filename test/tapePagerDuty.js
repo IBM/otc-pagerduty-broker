@@ -46,7 +46,6 @@ var mockUserArray = [];
 var currentTime = new Date().valueOf();
 var pagerduty = {};
 pagerduty.service_name = "testPagerDuty" + currentTime;
-pagerduty.user_name = "Test User" + currentTime;
 pagerduty.user_email = "user" + currentTime + "@ibm.com";
 pagerduty.user_phone_country = '33';
 pagerduty.user_phone_number = "123456789";
@@ -149,8 +148,7 @@ test('PagerDuty Broker - Test PUT instance with names being prefix of existing o
     
     var pagerduty2 = _.clone(pagerduty);
     pagerduty2.service_name += " 2 Suffix";
-    pagerduty2.user_name += " 2 Suffix";
-    pagerduty2.user_email = "user" + currentTime + "_2_suffix@ibm.com";
+    pagerduty2.user_email = "user" + currentTime + "_2@ibm.com.suffix";
 
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
@@ -163,7 +161,6 @@ test('PagerDuty Broker - Test PUT instance with names being prefix of existing o
 
         var pagerduty3 = _.clone(pagerduty);
         pagerduty3.service_name += " 2";
-	    pagerduty3.user_name += " 2";
 	    pagerduty3.user_email = "user" + currentTime + "_2@ibm.com";
 	
 	    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
@@ -236,7 +233,8 @@ function assertServiceAndUser(pagerduty, t) {
         }
         t.ok(service, 'was a service found?');
         var escalation_policy = service.escalation_policy;
-        t.equal(escalation_policy.name, "Call " + pagerduty.user_name, 'was the right escalation policy created?');
+        var userName = "Primary contact (" + pagerduty.user_email + ")";
+        t.equal(escalation_policy.name, "Call " + userName, 'was the right escalation policy created?');
         var escalation_policy_url = pagerdutyApiUrl + "/escalation_policies/" + escalation_policy.id;
     	request.get({
     		uri: escalation_policy_url,
@@ -248,7 +246,7 @@ function assertServiceAndUser(pagerduty, t) {
 			var escalation_rule = body.escalation_policy.escalation_rules[0];
 			t.equal(escalation_rule.targets.length, 1, 'was only 1 target user found?');
 			var target = escalation_rule.targets[0];
-			t.equal(target.name, pagerduty.user_name, 'was the correct user name used?');
+			t.equal(target.name, userName, 'was the correct user name used?');
 			t.equal(target.email, pagerduty.user_email, 'was the correct user email used?');
 			var contact_method_url = pagerdutyApiUrl + "/users/" + target.id + "/contact_methods";
 			request.get({
@@ -272,7 +270,6 @@ function getPostServiceInstanceParameters(pagerduty) {
 	return {
 		api_token: pagerdutyApiToken,
 		service_name: pagerduty.service_name,
-		user_name: pagerduty.user_name,
 		user_email: pagerduty.user_email,
 		user_phone: "+" + pagerduty.user_phone_country + " " + pagerduty.user_phone_number
 	};
