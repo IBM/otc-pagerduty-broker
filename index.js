@@ -149,7 +149,8 @@ function configureAppSync(db) {
 		next();
 	})
 
-	.use("/pagerduty-broker/event/v1", require("./lib/event/event"))
+	// Endpoint for the lifecycle messaging store
+	.use("/pagerduty-broker/api/v1/messaging", require("./lib/event/event"))
 
 	.use("/pagerduty-broker/api/v1/service_instances", require("./lib/middleware/service_instances"))
 	.get("/pagerduty-broker", function (req, res/*, next*/) {

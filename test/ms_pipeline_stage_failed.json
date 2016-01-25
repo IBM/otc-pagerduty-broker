@@ -1,0 +1,96 @@
+{
+	"toolchain_id": "765d5ca8-3f33-4f00-b46e-1bf0d886cd76",
+	"service_id": "pipeline",
+	"instance_id": "123456789",
+	"payload": {
+    	"pipeline": {
+	    	"enabled": true,
+		    "lastModified": 1453209371973,
+		    "status": "OK",
+		    "viewed": false,
+    		"credentialsId": "d3e8702d-eaf0-4514-93c5-2b5cfa3f1da3",
+		    "id": "a485b7d2-df35-701b-ffac-cd1cff9a8703",
+		    "custom_image_enabled": false,
+		    "name": null,
+		    "stageJobCount": 1,
+		    "dateCreated": 1453209223489,
+		    "restrictDeployments": false,
+		    "restrictModifications": false,
+		    "jazzHubProjectId": "_IT9GVb6uEeWqbq5sMyrrig"
+	    },
+	    "event": "jobCompleted",
+	    "job": {
+		    "errorMessage": null,
+		    "buildType": "none",
+		    "artifactName": null,
+		    "status": "OK",
+			"fetchInput": true,
+			"testFilePattern": null,
+			"type": "builder.engine2",
+			"componentType": "Builder",
+			"failStage": true,
+			"id": "b8839b42-600e-4c9e-af49-0d962af66d05",
+			"directoryOffset": "",
+			"enableTests": false,
+			"componentName": "Build",
+			"archiveDir": "",
+			"docker_image": null,
+			"buildScript": null,
+			"categories": ["builder"],
+			"triggers": [],
+			"produceArtifacts": true
+		},
+		"stage": {
+			"id": "5b5f955e-0099-4ad7-8d4f-dbe818bf240e",
+			"enabled": true,
+			"jobs": [{
+				"errorMessage": null,
+				"buildType": "none",
+				"artifactName": null,
+				"status": "OK",
+				"fetchInput": true,
+				"testFilePattern": null,
+				"type": "builder.engine2",
+				"componentType": "Builder",
+				"failStage": true,
+				"id": "b8839b42-600e-4c9e-af49-0d962af66d05",
+				"directoryOffset": "",
+				"enableTests": false,
+				"componentName": "Build",
+				"archiveDir": "",
+				"docker_image": null,
+				"buildScript": null,
+				"categories": ["builder"],
+				"triggers": [],
+				"produceArtifacts": true
+			}],
+			"name": "MyStage",
+			"properties": []
+		},
+		"execution": {
+			"stageId": "5b5f955e-0099-4ad7-8d4f-dbe818bf240e",
+			"id": "44485e08-0b8b-4b7d-880a-7cf31bc94d6d",
+			"duration": 25323,
+			"modifiedAt": 1453209975946,
+			"inputs": [{
+				"revisionId": "6dea84f1b81ad112c63d6e823a87a602dfae15d3",
+				"inputId": "757deb1c-11bb-47d1-b411-e2711e3af03b"
+			}],
+			"status": "FAILURE",
+			"createdAt": 1453209950623,
+			"jobExecutions": [{
+				"jobId": "b8839b42-600e-4c9e-af49-0d962af66d05",
+				"jobExecutionId": "c84a1c84-3900-4f70-b6b6-b482e5019791",
+				"engine": "Engine2",
+				"artifactRevision": "3",
+				"script": "#!\/bin\/bash\nset -e -o pipefail\nexport TASK_ID=\"c84a1c84-3900-4f70-b6b6-b482e5019791\"\nexport BUILD_NUMBER=\"3\"\nexport BUILD_DISPLAY_NAME=\"#3\"\nexport IDS_URL=\"https:\/\/beta3.hub.jazz.net\/pipeline\"\nexport IDS_SOURCE_CHANGE_SERVICE_URL=\"https:\/\/10.107.45.173:3011\/api\"\nexport IDS_TEST_SERVICE_URL=\"https:\/\/10.107.45.173:3031\/api\"\nexport PIPELINE_SCRIPTS_DIR=\"\/opt\/IBM\/pipeline\/bin\"\nexport PIPELINE_TOKEN=\"****\"\nexport RTC_CLI_PATH=\"\/opt\/IBM\/RTC-SCM-Tools\/jazz\/scmtools\/eclipse\/lscm\"\nexport PIPELINE_INITIAL_STAGE_EXECUTION_ID=\"44485e08-0b8b-4b7d-880a-7cf31bc94d6d\"\nexport IDS_PROJECT_NAME=\"erics | gitHubNode\"\nexport PIPELINE_STAGE_INPUT_JOB_ID=\"\"\nexport PIPELINE_STAGE_INPUT_REV=\"6dea84f1b81ad112c63d6e823a87a602dfae15d3\"\nexport IDS_STAGE_NAME=\"MyStage\"\nexport IDS_JOB_NAME=\"Build\"\nexport IDS_JOB_ID=\"b8839b42-600e-4c9e-af49-0d962af66d05\"\nexport JOB_NAME=\"a485b7d2-df35-701b-ffac-cd1cff9a8703\/b8839b42-600e-4c9e-af49-0d962af66d05\"\nexport BUILD_ID=\"c84a1c84-3900-4f70-b6b6-b482e5019791\"\nmkdir \"$TASK_ID\"\ncd \"$TASK_ID\"\nexport WORKSPACE=`readlink -f .`\nexport GIT_COMMIT=\"6dea84f1b81ad112c63d6e823a87a602dfae15d3\"\nexport GIT_URL=\"https:\/\/github.com\/ericsamuelsson\/e-git.git\"\nexport GIT_BRANCH=\"master\"\n\/opt\/IBM\/pipeline\/bin\/git-scm.sh 'https:\/\/github.com\/ericsamuelsson\/e-git.git' 'x-oauth-basic' '****' '6dea84f1b81ad112c63d6e823a87a602dfae15d3' '6dea84f1b81ad112c63d6e823a87a602dfae15d3' 'master' .\nexport ARCHIVE_DIR=\".\"\ncat > _pipeline_script.sh <<'EOF_PIPELINE_SCRIPT'\n#!\/bin\/bash\nset -e -o pipefail\ncd \"$WORKSPACE\"\nif [ -d \"$ARCHIVE_DIR\" ]; then\njava -jar \/opt\/IBM\/pipeline\/lib\/CodeStation-CLI.jar -r \"https:\/\/D90JEN02.sl.jazz.net:9444\" -u pipeline_token -p \"$PIPELINE_TOKEN\" -a \"$TASK_ID\" -i '**\/*' -e _pipeline_script.sh -e _customer_script.sh -e node_modules -e 'node_modules\/**\/*' -e .git -e '.git\/**\/*' upload \"$ARCHIVE_DIR\"\nfi\nEOF_PIPELINE_SCRIPT\nset +e\n\/bin\/bash _pipeline_script.sh\nPIPELINE_EXIT_CODE=$?\nexit $PIPELINE_EXIT_CODE\n"
+			}],
+			"number": 3,
+			"properties": [],
+			"successful": false,
+			"completedAt": 1453209975946,
+			"running": false,
+			"requestedBy": "erics"
+		}
+	}
+}

@@ -183,6 +183,24 @@ test('PagerDuty Broker - Test PUT instance with names being prefix of existing o
     });
 });
 
+test('PagerDuty Broker - Test Messaging Store Like Event', function (t) {
+	t.plan(1);
+	
+	// Message Store Event endpoint
+	var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
+
+	// Simulate a Pipeline event
+	var message_store_pipeline_event = require("./ms_pipeline_stage_failed");
+	message_store_pipeline_event.toolchain_id = mockToolchainId;
+	message_store_pipeline_event.instance_id = mockServiceInstanceId;
+	
+    postRequest(messagingEndpoint, {header: header, body: JSON.stringify(message_store_pipeline_event)})
+        .then(function(resultFromPost) {
+            t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
+        });	
+	
+});
+
 //Monitoring endpoints
 test('PagerDuty Broker - Test GET status', function (t) {
     t.plan(1);
@@ -330,6 +348,25 @@ function getRequest(url, options) {
                 return {
                     "statusCode": res[0].statusCode,
                     "body": res[1]
+                };
+            } else {
+                return {
+                    "statusCode": res[0].statusCode
+                };
+            }
+        });
+}
+
+function postRequest(url, options) {
+    var params = initializeRequestParams(url, options);
+
+    var post = Q.nbind(request.post, this);
+    return post(params.uri, {body: params.body, headers: params.headers})
+        .then(function(res) {
+            if(res[1]) {
+                   return {
+                    "statusCode": res[0].statusCode,
+                    "body": JSON.parse(res[1])
                 };
             } else {
                 return {
