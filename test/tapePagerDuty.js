@@ -49,8 +49,9 @@ pagerduty.service_name = "testPagerDuty" + currentTime;
 pagerduty.user_email = "user" + currentTime + "@ibm.com";
 pagerduty.user_phone_country = '33';
 pagerduty.user_phone_number = "123456789";
+var pagerdutyAccountId = nconf.get("pagerduty-account");
 var pagerdutyApiToken = nconf.get("pagerduty-token");
-var pagerdutyApiUrl = nconf.get("services:pagerduty") + "/api/v1";
+var pagerdutyApiUrl = "https://" + pagerdutyAccountId + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
 
 test('PagerDuty Broker - Test Setup', function (t) {
     mockUserArray = nconf.get('userArray');
@@ -268,6 +269,7 @@ function assertServiceAndUser(pagerduty, t) {
 
 function getPostServiceInstanceParameters(pagerduty) {
 	return {
+		account_id: pagerdutyAccountId,
 		api_token: pagerdutyApiToken,
 		service_name: pagerduty.service_name,
 		user_email: pagerduty.user_email,

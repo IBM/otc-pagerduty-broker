@@ -1,6 +1,6 @@
 {
 	"url": "https://otc-pagerduty-broker-dev.stage1.ng.bluemix.net",
 	"services": {
-		"pagerduty": "https://jeromelanneluc.pagerduty.com"
+		"pagerduty": "https://pagerduty.com"
 	}
 }

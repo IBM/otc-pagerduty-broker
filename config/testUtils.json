@@ -12,5 +12,6 @@
     "auth-header": "Y2Y6",
     "test_app_guid": "99b0fed4-9d53-4bd5-8efa-bb4237a35430",
     "test_app_org_guid": "8a5b49de-1a3c-4075-b3ec-bd25d90ae2a1",
+    "pagerduty-account": "jeromelanneluc",
     "pagerduty-token":"2Yp98kwRpjZ6nK3jfycb"
 }
