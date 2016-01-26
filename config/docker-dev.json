@@ -2,7 +2,7 @@
     "url": "http://docker.ng.bluemix.net",
     "schemes": "http",
 	"services": {
-		"pagerduty": "https://pagerduty.com/api",
+		"pagerduty": "https://pagerduty.com",
         "url" : "http://docker.ng.bluemix.net"
 	},
     "_vcap_application": {
