@@ -36,6 +36,8 @@ var defaultHeaders = {
     'Content-Type': 'application/json'
 };
 
+var event_endpoints = {};
+
 var mockServiceInstanceId = "1234";
 var mockToolchainId = "c234adsf-111";
 
@@ -183,6 +185,23 @@ test('PagerDuty Broker - Test PUT instance with names being prefix of existing o
     });
 });
 
+test('PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
+    t.plan(2);
+
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId + '/toolchains/'+ mockToolchainId;
+    putRequest(url, {header: header})
+        .then(function(resultsFromBind) {
+            t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
+            //t.comment(JSON.stringify(resultsFromBind));
+            if (_.isString(resultsFromBind.body.toolchain_lifecycle_webhook_url)) {
+                t.ok(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'did the toolchain_lifecycle_webhook_url value returned and valid ?');
+                event_endpoints.toolchain_lifecycle_webhook_url = resultsFromBind.body.toolchain_lifecycle_webhook_url;
+            } else {
+                t.notOk(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'is not a valid returned url for toolchain_lifecycle_webhook_url ?');            	
+            }
+    });
+});
+
 test('PagerDuty Broker - Test Messaging Store Like Event', function (t) {
 	t.plan(1);
 	
@@ -200,6 +219,19 @@ test('PagerDuty Broker - Test Messaging Store Like Event', function (t) {
         });	
 	
 });
+
+test('PagerDuty Broker - Test Toolchain Lifecycle Like Event', function (t) {
+	t.plan(1);
+	
+	var lifecycle_event = {"description" : "this a toolchain lifecycle event"};
+	// Simulate a Toolchain Lifecycle event
+    postRequest(event_endpoints.toolchain_lifecycle_webhook_url, {header: header, body: JSON.stringify(lifecycle_event)})
+        .then(function(resultFromPost) {
+            t.equal(resultFromPost.statusCode, 204, 'did the toolchain lifecycle event sending call succeed?');
+        });	
+	
+});
+
 
 //Monitoring endpoints
 test('PagerDuty Broker - Test GET status', function (t) {

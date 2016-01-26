@@ -123,6 +123,10 @@ function configureAppSync(db) {
 	  next();
 	})
 	
+	.use(log4js.connectLogger(log4js.getLogger("request"), {
+	    format: ":method :url :status - :response-time ms"
+	}))
+	
 	.use(bodyParser.json())
 	.get("/status", function (req, res/*, next*/) {
         return res.status(200).send("The PagerDuty Broker is running.");
@@ -140,19 +144,12 @@ function configureAppSync(db) {
         })
     ))
     
-    // Try to fetch the user profile from the Authorization header.
-	.use(fetchAuthMiddleware())
-	
 	// Tack a handle to the Services Database to every request for use in the middleware.
 	.use(function (req, res, next) {
 		req.servicesDb = db;
 		next();
 	})
 
-	// Endpoint for the lifecycle messaging store
-	.use("/pagerduty-broker/api/v1/messaging", require("./lib/event/event"))
-
-	.use("/pagerduty-broker/api/v1/service_instances", require("./lib/middleware/service_instances"))
 	.get("/pagerduty-broker", function (req, res/*, next*/) {
 		db.view("pagerduty", "service_instances", function (err, r) {
 			var page = "" +
@@ -175,6 +172,14 @@ function configureAppSync(db) {
 			return res.send(page);
 		});
 	})
+
+    // Try to fetch the user profile from the Authorization header.
+	.use(fetchAuthMiddleware())
+	
+	// Endpoint for the lifecycle messaging store and toolchain api lifecycle events
+	.use("/pagerduty-broker/api/v1/messaging", require("./lib/event/event"))
+
+	.use("/pagerduty-broker/api/v1/service_instances", require("./lib/middleware/service_instances"))
 
 	//Handle errors
 	.use(function(error, req, res, next) {
