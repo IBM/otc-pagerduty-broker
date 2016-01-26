@@ -150,6 +150,9 @@ function configureAppSync(db) {
 		next();
 	})
 
+	// Temporary in order to have message coming from webhookmanager pipeline
+	.use("/pagerduty-broker/unsecured/event/v1/", require("./lib/event/event"))
+
 	.get("/pagerduty-broker", function (req, res/*, next*/) {
 		db.view("pagerduty", "service_instances", function (err, r) {
 			var page = "" +

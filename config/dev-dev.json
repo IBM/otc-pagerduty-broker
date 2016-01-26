@@ -1,6 +1,8 @@
 {
 	"url": "https://otc-pagerduty-broker-dev.stage1.ng.bluemix.net",
 	"services": {
-		"pagerduty": "https://pagerduty.com"
+		"pagerduty": "https://pagerduty.com",
+		"otc-api": "https://otc-api.stage1.ng.bluemix.net/api/v1",
+		"otc-webhook-manager" : "https://otc-webhook-manager.stage1.ng.bluemix.net"	
 	}
 }

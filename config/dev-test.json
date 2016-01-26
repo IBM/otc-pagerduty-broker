@@ -2,7 +2,9 @@
     "url": "https://otc-pagerduty-broker-test.stage1.ng.bluemix.net",
     "schemes": "https",
     "services": {
-		"pagerduty": "https://pagerduty.com"
+		"pagerduty": "https://pagerduty.com",
+		"otc-api": "https://otc-api-test.stage1.ng.bluemix.net/api/v1",
+		"otc-webhook-manager" : "https://otc-webhook-manager-test.stage1.ng.bluemix.net"
     },
     "_vcap_application": {
         "application_uris":["https://otc-pagerduty-broker-test.stage1.ng.bluemix.net"]
