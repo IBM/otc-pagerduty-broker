@@ -185,6 +185,43 @@ test('PagerDuty Broker - Test PUT instance with names being prefix of existing o
     });
 });
 
+test('PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', function (t) {
+    t.plan(6);
+    
+    var pagerduty4 = _.clone(pagerduty);
+    pagerduty4.service_name += "4";
+    pagerduty4.user_email = "user" + currentTime + "_4@ibm.com";
+
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+    body.service_id = 'pagerduty';
+    body.organization_guid = nconf.get('test_app_org_guid');
+    body.parameters = getPostServiceInstanceParameters(pagerduty4);;
+
+    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+        t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
+
+        var pagerduty5 = {};
+        pagerduty5.service_name = pagerduty4.service_name;	
+	    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+	    body.parameters = getPostServiceInstanceParameters(pagerduty5);;
+	
+	    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+	        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
+	        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+	        
+	        // Ensure PagerDuty service is reused
+	        assertService(pagerduty5, t, null);
+	        
+	        // Ensure dashboard url is accessible
+	        var dashboardUrl = results.body.dashboard_url;
+	        getRequest(dashboardUrl, {}) .then(function(getResults) {
+	            t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
+	        });
+	    });
+    });
+});
+
 test('PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
     t.plan(2);
 
@@ -261,7 +298,7 @@ test('PagerDuty Broker - Test GET version', function (t) {
 
 // Utility functions
 
-function assertServiceAndUser(pagerduty, t) {
+function assertService(pagerduty, t, callback) {
 	var pagerdutyHeaders = {
 		'Authorization': 'Token token=' + pagerdutyApiToken
 	};
@@ -283,6 +320,15 @@ function assertServiceAndUser(pagerduty, t) {
 	        }
         }
         t.ok(service, 'was a service found?');
+        if (callback)
+        	return callback(pagerduty, t, pagerdutyHeaders, service);
+        return;
+	});
+}
+
+
+function assertServiceAndUser(pagerduty, t) {
+	assertService(pagerduty, t, function(pagerduty, t, pagerdutyHeaders, service) {
         var escalation_policy = service.escalation_policy;
         var userName = "Primary contact (" + pagerduty.user_email + ")";
         t.equal(escalation_policy.name, "Call " + userName, 'was the right escalation policy created?');
