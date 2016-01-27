@@ -1,0 +1,186 @@
+
+
+{
+  "toolchain_id": "765d5ca8-3f33-4f00-b46e-1bf0d886cd76",
+  "service_id": "pipeline",
+  "instance_id": "123456789",
+  "payload": {
+    "token": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJjMDAxY2I4OC1iMTI1LTQwNzYtOTRjYi1kOTliZDI1MWEzN2IiLCJzdWIiOiI4MzdlMTQzMC03ZmJkLTRhNGYtYTg2OC1lYTYzNTAwYzlmODYiLCJzY29wZSI6WyJjbG91ZF9jb250cm9sbGVyLnJlYWQiLCJwYXNzd29yZC53cml0ZSIsImNsb3VkX2NvbnRyb2xsZXIud3JpdGUiLCJvcGVuaWQiXSwiY2xpZW50X2lkIjoib3RjY2xpZW50IiwiY2lkIjoib3RjY2xpZW50IiwiYXpwIjoib3RjY2xpZW50IiwiZ3JhbnRfdHlwZSI6ImF1dGhvcml6YXRpb25fY29kZSIsInVzZXJfaWQiOiI4MzdlMTQzMC03ZmJkLTRhNGYtYTg2OC1lYTYzNTAwYzlmODYiLCJvcmlnaW4iOiJ1YWEiLCJ1c2VyX25hbWUiOiJqZXJvbWVfbGFubmVsdWNAZnIuaWJtLmNvbSIsImVtYWlsIjoiamVyb21lX2xhbm5lbHVjQGZyLmlibS5jb20iLCJhdXRoX3RpbWUiOjE0NTM4ODkzMzksInJldl9zaWciOiIyOTMzY2ViOSIsImlhdCI6MTQ1Mzg4OTMzOSwiZXhwIjoxNDUzOTMyNTM5LCJpc3MiOiJodHRwczovL3VhYS5zdGFnZTEubmcuYmx1ZW1peC5uZXQvb2F1dGgvdG9rZW4iLCJ6aWQiOiJ1YWEiLCJhdWQiOlsiY2xvdWRfY29udHJvbGxlciIsInBhc3N3b3JkIiwib3BlbmlkIiwib3RjY2xpZW50Il19.nYSzLVoAYZpQC1LM48a_G_tO_pb48waQRChNypWF8CA",
+    "pipeline": {
+      "enabled": true,
+      "lastModified": 1453889556629,
+      "status": "OK",
+      "viewed": false,
+      "credentialsId": "fe2eea12-7b12-4649-a67f-09e1a41592f3",
+      "id": "eabd5aa3-c96b-449f-986e-f7cbfbcd01e0",
+      "custom_image_enabled": false,
+      "name": null,
+      "stageJobCount": 3,
+      "dateCreated": 1453817531404,
+      "restrictDeployments": false,
+      "restrictModifications": false,
+      "jazzHubProjectId": "a2bb5dd1-6ffc-4dd3-91da-06676af15b02"
+    },
+    "event": "stageCompleted",
+    "stage": {
+      "id": "aaddfc90-3017-42ac-94b4-02c8fedb6f6f",
+      "enabled": true,
+      "jobs": [
+        {
+          "artifactName": null,
+          "status": "CONFIGURING",
+          "fetchInput": true,
+          "cfApiUrl": "https:\/\/api.stage1.ng.bluemix.net",
+          "builderId": "7c135207-777a-4154-a238-6bb86bce99ef",
+          "type": "deployer.engine2",
+          "cfOrgGuid": "089f25e5-8d15-4866-bda8-f509dcdb5c9b",
+          "componentType": "Deployer",
+          "failStage": true,
+          "id": "d12aa2c9-dc4c-4de0-8715-a4b9e32383ee",
+          "directoryOffset": null,
+          "cfSpaceGuid": "aa76be16-fe91-47db-aee6-553ff7b5f562",
+          "cfScript": "#!\/bin\/bash\ncf push \"${CF_APP}\"\nexport CF_APP_NAME=\"$CF_APP\"\n# View logs\n#cf logs \"${CF_APP}\" --recent",
+          "componentName": "Deploy to dev",
+          "archiveDir": null,
+          "docker_image": null,
+          "cfRegionId": "ibm:ys1:us-south",
+          "categories": [
+            "deployer"
+          ],
+          "triggers": [
+            
+          ],
+          "produceArtifacts": false,
+          "cfAppName": "jerome-demo2-microservices-ui"
+        },
+        {
+          "buildType": "extension",
+          "fetchInput": true,
+          "extComponentType": "Deployer",
+          "builderId": "7c135207-777a-4154-a238-6bb86bce99ef",
+          "type": "deployer.engine2",
+          "cfOrgGuid": "ff900882-a6ae-4b23-9aa0-4a7132330453",
+          "id": "b445b0b9-c7a2-4a7f-8a1b-267839dce0f4",
+          "directoryOffset": "",
+          "archiveDir": null,
+          "triggerEnabled": false,
+          "docker_image": null,
+          "cfRegionId": null,
+          "buildScript": "",
+          "parameters": {
+            "COMMAND": "#!\/bin\/bash\nsource ${EXT_DIR}\/git_util.sh\ngit_retry clone https:\/\/github.com\/Osthanes\/update_service.git activedeploy\nactivedeploy\/activedeploy_step_2.sh"
+          },
+          "artifactName": null,
+          "extensionId": "ibm.devops.services.pipeline.devops.ad_finish",
+          "status": "CONFIGURING",
+          "cfApiUrl": "https:\/\/api.stage1.ng.bluemix.net",
+          "testFilePattern": null,
+          "failStage": true,
+          "componentType": "Deployer",
+          "cfSpaceGuid": "fbfc982c-7768-49b0-b697-a3b5a14be3d9",
+          "cfScript": null,
+          "enableTests": false,
+          "componentName": "My Active Deploy",
+          "scmSource": null,
+          "categories": [
+            "deployer"
+          ],
+          "triggers": [
+            {
+              "id": "b22c14cc-2f5f-4ae2-9ba5-bd6ecf574212",
+              "enabled": true,
+              "sourceComponentId": "d12aa2c9-dc4c-4de0-8715-a4b9e32383ee",
+              "taskStatus": "SUCCESS",
+              "type": "TaskTrigger"
+            }
+          ],
+          "produceArtifacts": true,
+          "cfAppName": null
+        }
+      ],
+      "name": "Deploy Stage",
+      "properties": [
+        {
+          "name": "CF_APP_NAME",
+          "value": "undefined",
+          "type": "TEXT"
+        },
+        {
+          "name": "APP_URL",
+          "value": "undefined",
+          "type": "TEXT"
+        }
+      ]
+    },
+    "toolchainId": "a2bb5dd1-6ffc-4dd3-91da-06676af15b02",
+    "execution": {
+      "stageId": "aaddfc90-3017-42ac-94b4-02c8fedb6f6f",
+      "id": "328c054b-fc74-4348-8859-ac79efce981a",
+      "duration": 100384,
+      "modifiedAt": 1453889494882,
+      "inputs": [
+        {
+          "revisionId": "1",
+          "inputId": "5ccf99cc-eea6-4a68-9631-1dceaffe00f8"
+        }
+      ],
+      "status": "FAILURE",
+      "createdAt": 1453889494655,
+      "jobExecutions": [
+        {
+          "jobId": "d12aa2c9-dc4c-4de0-8715-a4b9e32383ee",
+          "organizationName": "jerome_lanneluc@fr.ibm.com",
+          "status": "SUCCESS",
+          "engine": "Engine2",
+          "organizationId": "089f25e5-8d15-4866-bda8-f509dcdb5c9b",
+          "endTime": 1453889556070,
+          "script": "#!\/bin\/bash\nset -e -o pipefail\nexport TASK_ID=\"3633121e-ca57-4704-881a-f7f8157fb2a5\"\nexport BUILD_NUMBER=\"6\"\nexport BUILD_DISPLAY_NAME=\"#6\"\nexport IDS_URL=\"https:\/\/devops.stage1.ng.bluemix.net\/pipelines\"\nexport IDS_SOURCE_CHANGE_SERVICE_URL=\"https:\/\/10.120.208.129:3011\/api\"\nexport IDS_TEST_SERVICE_URL=\"https:\/\/10.120.208.129:3031\/api\"\nexport PIPELINE_SCRIPTS_DIR=\"\/opt\/IBM\/pipeline\/bin\"\nexport PIPELINE_TOKEN=\"****\"\nexport RTC_CLI_PATH=\"\/opt\/IBM\/RTC-SCM-Tools\/jazz\/scmtools\/eclipse\/lscm\"\nexport PIPELINE_TOOLCHAIN_ID=\"a2bb5dd1-6ffc-4dd3-91da-06676af15b02\"\nexport PIPELINE_INITIAL_STAGE_EXECUTION_ID=\"328c054b-fc74-4348-8859-ac79efce981a\"\nexport IDS_PROJECT_NAME=\"jerome-demo2\"\nexport PIPELINE_STAGE_INPUT_JOB_ID=\"7c135207-777a-4154-a238-6bb86bce99ef\"\nexport PIPELINE_STAGE_INPUT_REV=\"1\"\nexport IDS_STAGE_NAME=\"Deploy Stage\"\nexport IDS_JOB_NAME=\"Deploy to dev\"\nexport IDS_JOB_ID=\"d12aa2c9-dc4c-4de0-8715-a4b9e32383ee\"\nexport JOB_NAME=\"eabd5aa3-c96b-449f-986e-f7cbfbcd01e0\/d12aa2c9-dc4c-4de0-8715-a4b9e32383ee\"\nexport BUILD_ID=\"3633121e-ca57-4704-881a-f7f8157fb2a5\"\nexport CF_ORG=\"jerome_lanneluc@fr.ibm.com\"\nexport CF_ORGANIZATION_ID=\"089f25e5-8d15-4866-bda8-f509dcdb5c9b\"\nexport CF_SPACE=\"dev\"\nexport CF_SPACE_ID=\"aa76be16-fe91-47db-aee6-553ff7b5f562\"\nexport CF_TARGET_URL=\"https:\/\/api.stage1.ng.bluemix.net\"\nexport CF_TOKEN=\"****\"\nexport CF_CONFIG_JSON=\"{\\\"ConfigVersion\\\":3,\\\"Target\\\":\\\"https:\/\/api.stage1.ng.bluemix.net\\\",\\\"ApiVersion\\\":\\\"2.40.0\\\",\\\"AuthorizationEndpoint\\\":\\\"https:\/\/login.stage1.ng.bluemix.net\/UAALoginServerWAR\\\",\\\"LoggregatorEndpoint\\\":\\\"wss:\/\/loggregator.stage1.ng.bluemix.net:443\\\",\\\"UaaEndpoint\\\":\\\"https:\/\/login.stage1.ng.bluemix.net\/UAALoginServerWAR\\\",\\\"AccessToken\\\":\\\"****\\\",\\\"RefreshToken\\\":null,\\\"Expiration\\\":1453889495456,\\\"OrganizationFields\\\":{\\\"Name\\\":\\\"jerome_lanneluc@fr.ibm.com\\\",\\\"Guid\\\":\\\"089f25e5-8d15-4866-bda8-f509dcdb5c9b\\\"},\\\"SpaceFields\\\":{\\\"Name\\\":\\\"dev\\\",\\\"Guid\\\":\\\"aa76be16-fe91-47db-aee6-553ff7b5f562\\\"}}\"\nexport IDS_VERSION=\"1\"\nmkdir \"$TASK_ID\"\ncd \"$TASK_ID\"\nexport WORKSPACE=`readlink -f .`\njava -jar \/opt\/IBM\/pipeline\/lib\/CodeStation-CLI.jar -r \"https:\/\/10.120.208.127:9444\" -u pipeline_token -p **** -a \"9d2ab5a0-96d2-4bf4-9b62-3ed35335687f\" download \".\"\nexport IDS_OUTPUT_PROPS=\"CF_APP_NAME,APP_URL\"\nexport _IDS_OUTPUT_PROPS=\"$IDS_OUTPUT_PROPS\"\nexport CF_APP_NAME=\"undefined\"\nexport APP_URL=\"undefined\"\nexport CF_APP=\"jerome-demo2-microservices-ui\"\nexport CF_METADATA=\"{\\\"appName\\\":\\\"jerome-demo2-microservices-ui\\\",\\\"appGuid\\\":\\\"f67c8708-1b68-4821-9b50-cf3323358c02\\\"}\"\ncat > _pipeline_script.sh <<'EOF_PIPELINE_SCRIPT'\n#!\/bin\/bash\nset -e -o pipefail\nmkdir -p ~\/.cf\necho \"$CF_CONFIG_JSON\" > ~\/.cf\/config.json\necho \"Target: ${CF_TARGET_URL}\"\ncat > _customer_script.sh <<'EOF_CUSTOMER_SCRIPT'\n#!\/bin\/bash\ncf push \"${CF_APP}\"\nexport CF_APP_NAME=\"$CF_APP\"\n# View logs\n#cf logs \"${CF_APP}\" --recent\nEOF_CUSTOMER_SCRIPT\nsource _customer_script.sh\nset +vx\n\/opt\/IBM\/pipeline\/bin\/ids-set-env.sh 'https:\/\/devops.stage1.ng.bluemix.net\/pipelines\/api\/notifications\/stage_properties\/328c054b-fc74-4348-8859-ac79efce981a' '****' \"$IDS_OUTPUT_PROPS\"\nEOF_PIPELINE_SCRIPT\nset +e\n\/bin\/bash _pipeline_script.sh\nPIPELINE_EXIT_CODE=$?\nexit $PIPELINE_EXIT_CODE\n",
+          "targetUrl": "https:\/\/api.stage1.ng.bluemix.net",
+          "environmentId": "aa76be16-fe91-47db-aee6-553ff7b5f562",
+          "startTime": 1453889495878,
+          "duration": 60192,
+          "jobExecutionId": "3633121e-ca57-4704-881a-f7f8157fb2a5",
+          "artifactRevision": "6",
+          "environmentName": "dev",
+          "successful": true,
+          "timeEstimate": 52
+        },
+        {
+          "jobId": "b445b0b9-c7a2-4a7f-8a1b-267839dce0f4",
+          "organizationName": "BluemixDevOpsORG",
+          "status": "FAILURE",
+          "engine": "Engine2",
+          "organizationId": "ff900882-a6ae-4b23-9aa0-4a7132330453",
+          "endTime": 1453889595039,
+          "script": "#!\/bin\/bash\nset -e -o pipefail\nexport TASK_ID=\"e7c934a4-de0d-4b2d-9ba2-fd25d2b919ec\"\nexport BUILD_NUMBER=\"6\"\nexport BUILD_DISPLAY_NAME=\"#6\"\nexport IDS_URL=\"https:\/\/devops.stage1.ng.bluemix.net\/pipelines\"\nexport IDS_SOURCE_CHANGE_SERVICE_URL=\"https:\/\/10.120.208.129:3011\/api\"\nexport IDS_TEST_SERVICE_URL=\"https:\/\/10.120.208.129:3031\/api\"\nexport PIPELINE_SCRIPTS_DIR=\"\/opt\/IBM\/pipeline\/bin\"\nexport PIPELINE_TOKEN=\"****\"\nexport RTC_CLI_PATH=\"\/opt\/IBM\/RTC-SCM-Tools\/jazz\/scmtools\/eclipse\/lscm\"\nexport PIPELINE_TOOLCHAIN_ID=\"a2bb5dd1-6ffc-4dd3-91da-06676af15b02\"\nexport PIPELINE_INITIAL_STAGE_EXECUTION_ID=\"328c054b-fc74-4348-8859-ac79efce981a\"\nexport IDS_PROJECT_NAME=\"jerome-demo2\"\nexport PIPELINE_STAGE_INPUT_JOB_ID=\"7c135207-777a-4154-a238-6bb86bce99ef\"\nexport PIPELINE_STAGE_INPUT_REV=\"1\"\nexport IDS_STAGE_NAME=\"Deploy Stage\"\nexport IDS_JOB_NAME=\"My Active Deploy\"\nexport IDS_JOB_ID=\"b445b0b9-c7a2-4a7f-8a1b-267839dce0f4\"\nexport JOB_NAME=\"eabd5aa3-c96b-449f-986e-f7cbfbcd01e0\/b445b0b9-c7a2-4a7f-8a1b-267839dce0f4\"\nexport BUILD_ID=\"e7c934a4-de0d-4b2d-9ba2-fd25d2b919ec\"\nexport CF_ORG=\"BluemixDevOpsORG\"\nexport CF_ORGANIZATION_ID=\"ff900882-a6ae-4b23-9aa0-4a7132330453\"\nexport CF_SPACE=\"dev\"\nexport CF_SPACE_ID=\"fbfc982c-7768-49b0-b697-a3b5a14be3d9\"\nexport CF_TARGET_URL=\"https:\/\/api.stage1.ng.bluemix.net\"\nexport CF_TOKEN=\"****\"\nexport CF_CONFIG_JSON=\"{\\\"ConfigVersion\\\":3,\\\"Target\\\":\\\"https:\/\/api.stage1.ng.bluemix.net\\\",\\\"ApiVersion\\\":\\\"2.40.0\\\",\\\"AuthorizationEndpoint\\\":\\\"https:\/\/login.stage1.ng.bluemix.net\/UAALoginServerWAR\\\",\\\"LoggregatorEndpoint\\\":\\\"wss:\/\/loggregator.stage1.ng.bluemix.net:443\\\",\\\"UaaEndpoint\\\":\\\"https:\/\/login.stage1.ng.bluemix.net\/UAALoginServerWAR\\\",\\\"AccessToken\\\":\\\"****\\\",\\\"RefreshToken\\\":null,\\\"Expiration\\\":1453889556617,\\\"OrganizationFields\\\":{\\\"Name\\\":\\\"BluemixDevOpsORG\\\",\\\"Guid\\\":\\\"ff900882-a6ae-4b23-9aa0-4a7132330453\\\"},\\\"SpaceFields\\\":{\\\"Name\\\":\\\"dev\\\",\\\"Guid\\\":\\\"fbfc982c-7768-49b0-b697-a3b5a14be3d9\\\"}}\"\nexport IDS_VERSION=\"1\"\nexport EXT_GIT_BRANCH=\"ae77aad9a22eb77522b321d363fd88566fb1b7ee\"\nexport EXT_GIT_URL=\"https:\/\/github.com\/Osthanes\/activedeploy_finish.git\"\nmkdir \"$TASK_ID\"\ncd \"$TASK_ID\"\nexport WORKSPACE=`readlink -f .`\njava -jar \/opt\/IBM\/pipeline\/lib\/CodeStation-CLI.jar -r \"https:\/\/10.120.208.127:9444\" -u pipeline_token -p **** -a \"9d2ab5a0-96d2-4bf4-9b62-3ed35335687f\" download \".\"\nexport IDS_OUTPUT_PROPS=\"CF_APP_NAME,APP_URL\"\nexport _IDS_OUTPUT_PROPS=\"$IDS_OUTPUT_PROPS\"\nexport CF_APP_NAME=\"jerome-demo2-microservices-ui\"\nexport APP_URL=\"undefined\"\nexport CF_APP=\"\"\nexport CF_METADATA=\"{\\\"appName\\\":null}\"\ncat > _pipeline_script.sh <<'EOF_PIPELINE_SCRIPT'\n#!\/bin\/bash\nset -e -o pipefail\nexport EXT_DIR=\"$TMPDIR\/extension_content\"\nexport ARCHIVE_DIR=\"$TMPDIR\/extension_archive\"\nmkdir -p \"$ARCHIVE_DIR\"\nexport ARCHIVE_DIR=`readlink -f $ARCHIVE_DIR`\ngit clone -q \"$EXT_GIT_URL\" \"$EXT_DIR\"\n$(cd $EXT_DIR && git checkout -q \"$EXT_GIT_BRANCH\")\nexport PATH=\"$PATH:$EXT_DIR\"\nmkdir -p ~\/.cf\necho \"$CF_CONFIG_JSON\" > ~\/.cf\/config.json\necho \"Target: ${CF_TARGET_URL}\"\ncat > _customer_script.sh <<'EOF_CUSTOMER_SCRIPT'\n#!\/bin\/bash\nset +x\nset +e\nexport RAMPDOWN_DURATION=#RAMPDOWN_DURATION#\nexport INIT_START_TIME=$(date +\"%s\")\n# OSSC line\ndpkg -l | grep '^ii' > $EXT_DIR\/pkglist\n. $EXT_DIR\/_init.sh\n# OSSC line\ndpkg -l | grep '^ii' > $EXT_DIR\/pkglist2\nif [[ $DEBUG -eq 1 ]]; then\n diff $EXT_DIR\/pkglist $EXT_DIR\/pkglist2\nfi\nINIT_END_TIME=$(date +\"%s\")\nINIT_EST_TIME=$(($INIT_END_TIME-$INIT_START_TIME))\necho -e \"Init runtime of `date -u -d @\"$INIT_EST_TIME\" +'%-Mm %-Ss'`\"# place command into a temp script file\ncat > script.sh << '__EOF__'\n#!\/bin\/bash\nfunction save_env_vars_on_exit() {\n echo \"#!\/bin\/bash\" > $EXT_DIR\/save_vars.sh\n export -p >> $EXT_DIR\/save_vars.sh\n}\ntrap \"save_env_vars_on_exit\" EXIT\n#!\/bin\/bash\nsource ${EXT_DIR}\/git_util.sh\ngit_retry clone https:\/\/github.com\/Osthanes\/update_service.git activedeploy\nactivedeploy\/activedeploy_step_2.sh\n__EOF__\n# call the script in a subscript\n\/bin\/bash -e script.sh\nPIPE_SCR_RESULT=$?\n# restore the saved exported vars\nsource $EXT_DIR\/save_vars.sh\nif [ $PIPE_SCR_RESULT -ne 0 ]; then\n exit $PIPE_SCR_RESULT\nfi\nEOF_CUSTOMER_SCRIPT\nsource _customer_script.sh\ncd \"$WORKSPACE\"\nif [ -d \"$ARCHIVE_DIR\" ]; then\njava -jar \/opt\/IBM\/pipeline\/lib\/CodeStation-CLI.jar -r \"https:\/\/10.120.208.127:9444\" -u pipeline_token -p \"$PIPELINE_TOKEN\" -a \"$TASK_ID\" -i '**\/*' -e _pipeline_script.sh -e _customer_script.sh upload \"$ARCHIVE_DIR\"\nfi\n\/opt\/IBM\/pipeline\/bin\/ids-set-env.sh 'https:\/\/devops.stage1.ng.bluemix.net\/pipelines\/api\/notifications\/stage_properties\/328c054b-fc74-4348-8859-ac79efce981a' '****' \"$IDS_OUTPUT_PROPS\"\nEOF_PIPELINE_SCRIPT\nset +e\n\/bin\/bash _pipeline_script.sh\nPIPELINE_EXIT_CODE=$?\nexit $PIPELINE_EXIT_CODE\n",
+          "targetUrl": "https:\/\/api.stage1.ng.bluemix.net",
+          "environmentId": "fbfc982c-7768-49b0-b697-a3b5a14be3d9",
+          "startTime": 1453889557088,
+          "duration": 37951,
+          "jobExecutionId": "e7c934a4-de0d-4b2d-9ba2-fd25d2b919ec",
+          "artifactRevision": "6",
+          "environmentName": "dev",
+          "successful": false
+        }
+      ],
+      "number": 6,
+      "properties": [
+        {
+          "name": "CF_APP_NAME",
+          "value": "jerome-demo2-microservices-ui",
+          "type": "TEXT"
+        },
+        {
+          "name": "APP_URL",
+          "value": "undefined",
+          "type": "TEXT"
+        }
+      ],
+      "successful": false,
+      "completedAt": 1453889595039,
+      "running": false,
+      "requestedBy": "837e1430-7fbd-4a4f-a868-ea63500c9f86"
+    }
+  }
+}
+

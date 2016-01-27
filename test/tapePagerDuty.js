@@ -209,7 +209,7 @@ test('PagerDuty Broker - Test Messaging Store Like Event', function (t) {
 	var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
 
 	// Simulate a Pipeline event
-	var message_store_pipeline_event = require("./ms_pipeline_stage_failed");
+	var message_store_pipeline_event = require("./active_deploy_job_failed");
 	message_store_pipeline_event.toolchain_id = mockToolchainId;
 	message_store_pipeline_event.instance_id = mockServiceInstanceId;
 	
