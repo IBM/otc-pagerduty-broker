@@ -52,7 +52,7 @@ pagerduty.user_email = "user" + currentTime + "@ibm.com";
 pagerduty.user_phone_country = '33';
 pagerduty.user_phone_number = "123456789";
 var pagerdutyAccountId = nconf.get("pagerduty-account");
-var pagerdutyApiToken = nconf.get("pagerduty-token");
+var pagerdutyApiKey = nconf.get("pagerduty-api-key");
 var pagerdutyApiUrl = "https://" + pagerdutyAccountId + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
 
 test('PagerDuty Broker - Test Setup', function (t) {
@@ -319,7 +319,7 @@ test('PagerDuty Broker - Test GET version', function (t) {
 
 function assertService(pagerduty, t, callback) {
 	var pagerdutyHeaders = {
-		'Authorization': 'Token token=' + pagerdutyApiToken
+		'Authorization': 'Token token=' + pagerdutyApiKey
 	};
 	var url = pagerdutyApiUrl + "/services?query=" + encodeURIComponent(pagerduty.service_name) + "&include[]=escalation_policy";
 	request.get({
@@ -385,7 +385,7 @@ function assertServiceAndUser(pagerduty, t) {
 function getPostServiceInstanceParameters(pagerduty) {
 	return {
 		account_id: pagerdutyAccountId,
-		api_token: pagerdutyApiToken,
+		api_key: pagerdutyApiKey,
 		service_name: pagerduty.service_name,
 		user_email: pagerduty.user_email,
 		user_phone: "+" + pagerduty.user_phone_country + " " + pagerduty.user_phone_number
