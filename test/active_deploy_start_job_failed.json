@@ -1,0 +1,303 @@
+
+
+{
+  "toolchain_id": "765d5ca8-3f33-4f00-b46e-1bf0d886cd76",
+  "service_id": "pipeline",
+  "instance_id": "123456789",
+  "payload": {
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIwNzBiZDM2OC0yNzdhLTQ4NDUtOGI2Mi0zMjAxNjg5NjFiMTUiLCJzdWIiOiJhYzM4ODg5YS0wM2E1LTQ2ZjMtOTFhMy0xZmI3MmRlNGI3MDQiLCJzY29wZSI6WyJjbG91ZF9jb250cm9sbGVyLnJlYWQiLCJwYXNzd29yZC53cml0ZSIsImNsb3VkX2NvbnRyb2xsZXIud3JpdGUiLCJvcGVuaWQiXSwiY2xpZW50X2lkIjoib3RjY2xpZW50IiwiY2lkIjoib3RjY2xpZW50IiwiYXpwIjoib3RjY2xpZW50IiwiZ3JhbnRfdHlwZSI6ImF1dGhvcml6YXRpb25fY29kZSIsInVzZXJfaWQiOiJhYzM4ODg5YS0wM2E1LTQ2ZjMtOTFhMy0xZmI3MmRlNGI3MDQiLCJvcmlnaW4iOiJ1YWEiLCJ1c2VyX25hbWUiOiJwaGlsaXBwZV9tdWxldEBmci5pYm0uY29tIiwiZW1haWwiOiJwaGlsaXBwZV9tdWxldEBmci5pYm0uY29tIiwiYXV0aF90aW1lIjoxNDU0MDc5NzA0LCJyZXZfc2lnIjoiNTk3ZmU3MmIiLCJpYXQiOjE0NTQwNzk3MDQsImV4cCI6MTQ1NDEyMjkwNCwiaXNzIjoiaHR0cHM6Ly91YWEuc3RhZ2UxLm5nLmJsdWVtaXgubmV0L29hdXRoL3Rva2VuIiwiemlkIjoidWFhIiwiYXVkIjpbImNsb3VkX2NvbnRyb2xsZXIiLCJwYXNzd29yZCIsIm9wZW5pZCIsIm90Y2NsaWVudCJdfQ.VEsYtzo-DMZQshGecqvfg3wfCEWEIPWGytZmmwy5m64",
+    "pipeline": {
+      "enabled": true,
+      "lastModified": 1454079735970,
+      "status": "OK",
+      "viewed": false,
+      "credentialsId": "1eb9b4f6-679a-423c-89b9-21752e259349",
+      "id": "7ed0dc9b-8f37-4d1b-8903-f3e9d6d493e6",
+      "custom_image_enabled": false,
+      "name": "PHILIPPE MULET",
+      "stageJobCount": 13,
+      "dateCreated": 1454022678250,
+      "restrictDeployments": false,
+      "restrictModifications": false,
+      "jazzHubProjectId": "7afb7d1f-5091-456d-b4a2-95d9e6feefb6"
+    },
+    "event": "stageStarted",
+    "stage": {
+      "id": "053b1e5a-a474-4f2e-a569-81ba1708d885",
+      "enabled": true,
+      "jobs": [
+        {
+          "artifactName": null,
+          "services": null,
+          "status": "OK",
+          "fetchInput": true,
+          "cfApiUrl": "https:\/\/api.stage1.ng.bluemix.net",
+          "builderId": "b3741611-f3e3-4ac3-863b-caee4b130f0a",
+          "type": "deployer.engine2",
+          "cfOrgGuid": "9e36724e-d461-4c1d-80f3-1c1d9c737259",
+          "componentType": "Deployer",
+          "failStage": true,
+          "id": "bb367728-65bb-4862-af74-cf4afa1a1485",
+          "directoryOffset": null,
+          "cfSpaceGuid": "d145ad3f-ce07-4a89-97f9-20cb93f3a7e4",
+          "cfScript": "#!\/bin\/bash\nexport CF_APP_NAME=\"${CF_APP}_${BUILD_NUMBER}\"",
+          "componentName": "Set App name",
+          "archiveDir": null,
+          "docker_image": null,
+          "cfRegionId": "ibm:ys1:us-south",
+          "categories": [
+            "deployer"
+          ],
+          "triggers": [
+            
+          ],
+          "produceArtifacts": false,
+          "cfAppName": "toolchain-demo2809-catalog"
+        },
+        {
+          "artifactName": null,
+          "services": null,
+          "status": "OK",
+          "fetchInput": true,
+          "cfApiUrl": "https:\/\/api.stage1.ng.bluemix.net",
+          "builderId": "b3741611-f3e3-4ac3-863b-caee4b130f0a",
+          "type": "deployer.engine2",
+          "cfOrgGuid": "9e36724e-d461-4c1d-80f3-1c1d9c737259",
+          "componentType": "Deployer",
+          "failStage": true,
+          "id": "937af0ae-8b8d-4b2c-a410-9c501663261d",
+          "directoryOffset": null,
+          "cfSpaceGuid": "d145ad3f-ce07-4a89-97f9-20cb93f3a7e4",
+          "cfScript": "#!\/bin\/bash\ncf create-service cloudantNoSQLDB Shared myMicroservicesCloudant\n# Publish catalogAPI\nif ! cf service catalogAPI > \/dev\/null; then\ncf cups catalogAPI\nfi\ncf push \"${CF_APP_NAME}\" --no-route -i 1",
+          "componentName": "Deploy Single Instance",
+          "archiveDir": null,
+          "docker_image": null,
+          "cfRegionId": "ibm:ys1:us-south",
+          "categories": [
+            "deployer"
+          ],
+          "triggers": [
+            {
+              "id": "a2f4fff7-4888-43c8-b95e-bb199e777468",
+              "enabled": true,
+              "sourceComponentId": "bb367728-65bb-4862-af74-cf4afa1a1485",
+              "taskStatus": "SUCCESS",
+              "type": "TaskTrigger"
+            }
+          ],
+          "produceArtifacts": false,
+          "cfAppName": "toolchain-demo2809-catalog"
+        },
+        {
+          "buildType": "extension",
+          "fetchInput": true,
+          "extComponentType": "Deployer",
+          "builderId": "b3741611-f3e3-4ac3-863b-caee4b130f0a",
+          "type": "deployer.engine2",
+          "cfOrgGuid": "9e36724e-d461-4c1d-80f3-1c1d9c737259",
+          "id": "ec2d6744-00b5-4b19-9137-49b241c6c874",
+          "directoryOffset": "",
+          "archiveDir": null,
+          "triggerEnabled": false,
+          "docker_image": null,
+          "cfRegionId": null,
+          "buildScript": "",
+          "parameters": {
+            "RAMPDOWN_DURATION": "5m",
+            "RAMPUP_DURATION": "5m",
+            "COMMAND": "#!\/bin\/bash\nsource ${EXT_DIR}\/git_util.sh\ngit_retry clone https:\/\/github.com\/Osthanes\/update_service.git activedeploy\nactivedeploy\/activedeploy_step_1.sh\n# Update catalogAPI\nHOST=http:\/\/$(cf app $CF_APP_NAME | grep urls: | awk '{print $2}')\ncf uups catalogAPI -p '{\"host\":\"'$HOST'\"}'"
+          },
+          "services": null,
+          "artifactName": null,
+          "extensionId": "ibm.devops.services.pipeline.devops.ad_start",
+          "status": "CONFIGURING",
+          "cfApiUrl": "https:\/\/api.stage1.ng.bluemix.net",
+          "testFilePattern": null,
+          "componentType": "Deployer",
+          "failStage": true,
+          "cfSpaceGuid": "d145ad3f-ce07-4a89-97f9-20cb93f3a7e4",
+          "cfScript": null,
+          "enableTests": false,
+          "componentName": "Begin AD",
+          "scmSource": null,
+          "categories": [
+            "deployer"
+          ],
+          "triggers": [
+            {
+              "id": "b5abc0ba-c249-4cb4-a256-4087e466b26b",
+              "enabled": true,
+              "sourceComponentId": "937af0ae-8b8d-4b2c-a410-9c501663261d",
+              "taskStatus": "SUCCESS",
+              "type": "TaskTrigger"
+            }
+          ],
+          "produceArtifacts": true,
+          "cfAppName": null
+        },
+        {
+          "buildType": "extension",
+          "fetchInput": true,
+          "extComponentType": "Deployer",
+          "builderId": "b3741611-f3e3-4ac3-863b-caee4b130f0a",
+          "type": "deployer.engine2",
+          "cfOrgGuid": "9e36724e-d461-4c1d-80f3-1c1d9c737259",
+          "id": "44de09d3-23b0-44e5-a8b8-93ed2f6defca",
+          "directoryOffset": "",
+          "archiveDir": null,
+          "triggerEnabled": false,
+          "docker_image": null,
+          "cfRegionId": null,
+          "buildScript": "",
+          "parameters": {
+            "COMMAND": "#!\/bin\/bash\nsource ${EXT_DIR}\/git_util.sh\ngit_retry clone https:\/\/github.com\/Osthanes\/update_service.git activedeploy\nactivedeploy\/activedeploy_step_2.sh"
+          },
+          "services": null,
+          "artifactName": null,
+          "extensionId": "ibm.devops.services.pipeline.devops.ad_finish",
+          "status": "OK",
+          "cfApiUrl": "https:\/\/api.stage1.ng.bluemix.net",
+          "testFilePattern": null,
+          "componentType": "Deployer",
+          "failStage": true,
+          "cfSpaceGuid": "d145ad3f-ce07-4a89-97f9-20cb93f3a7e4",
+          "cfScript": null,
+          "enableTests": false,
+          "componentName": "Complete AD",
+          "scmSource": null,
+          "categories": [
+            "deployer"
+          ],
+          "triggers": [
+            {
+              "id": "aa05c727-53a3-484c-99c2-96b461408ffd",
+              "enabled": true,
+              "sourceComponentId": "ec2d6744-00b5-4b19-9137-49b241c6c874",
+              "taskStatus": "SUCCESS",
+              "type": "TaskTrigger"
+            }
+          ],
+          "produceArtifacts": true,
+          "cfAppName": null
+        }
+      ],
+      "name": "PROD",
+      "properties": [
+        {
+          "name": "CF_APP_NAME",
+          "value": "undefined",
+          "type": "TEXT"
+        },
+        {
+          "name": "APP_URL",
+          "value": "undefined",
+          "type": "TEXT"
+        },
+        {
+          "name": "ROUTE_DOMAIN",
+          "value": "stage1.mybluemix.net",
+          "type": "TEXT"
+        },
+        {
+          "name": "GROUP_SIZE",
+          "value": "3",
+          "type": "TEXT"
+        },
+        {
+          "name": "TARGET_PLATFORM",
+          "value": "CloudFoundry",
+          "type": "TEXT"
+        },
+        {
+          "name": "TEST_RESULT_FOR_AD",
+          "value": "",
+          "type": "TEXT"
+        },
+        {
+          "name": "DRA_SERVER",
+          "value": "https:\/\/dra.stage1.mybluemix.net",
+          "type": "TEXT"
+        }
+      ]
+    },
+    "toolchainId": "7afb7d1f-5091-456d-b4a2-95d9e6feefb6",
+    "execution": {
+      "stageId": "053b1e5a-a474-4f2e-a569-81ba1708d885",
+      "id": "8bbcc28a-b9bf-41da-b667-365d6b9f2e2d",
+      "duration": 20,
+      "modifiedAt": 1454081710624,
+      "inputs": [
+        {
+          "revisionId": "7",
+          "inputId": "ee5db1f6-49bc-456f-b991-4ad7bc6ed7e5"
+        }
+      ],
+      "status": "NEW",
+      "createdAt": 1454081710624,
+      "jobExecutions": [
+        {
+          "jobId": "bb367728-65bb-4862-af74-cf4afa1a1485",
+          "jobExecutionId": "9b8a4bae-2368-41bc-91f9-72373e818e83"
+        },
+        {
+          "jobId": "937af0ae-8b8d-4b2c-a410-9c501663261d",
+          "jobExecutionId": "b483bae7-2691-4455-8f6d-b8318153143a"
+        },
+        {
+          "jobId": "ec2d6744-00b5-4b19-9137-49b241c6c874",
+          "jobExecutionId": "4dfd2782-11fa-4baf-8f38-88c9f43ce5a8"
+        },
+        {
+          "jobId": "44de09d3-23b0-44e5-a8b8-93ed2f6defca",
+          "jobExecutionId": "c73e4412-6be4-4e4b-84c8-38d4d4722559"
+        }
+      ],
+      "number": 8,
+      "properties": [
+        {
+          "name": "CF_APP_NAME",
+          "value": "undefined",
+          "type": "TEXT"
+        },
+        {
+          "name": "APP_URL",
+          "value": "undefined",
+          "type": "TEXT"
+        },
+        {
+          "name": "ROUTE_DOMAIN",
+          "value": "stage1.mybluemix.net",
+          "type": "TEXT"
+        },
+        {
+          "name": "GROUP_SIZE",
+          "value": "3",
+          "type": "TEXT"
+        },
+        {
+          "name": "TARGET_PLATFORM",
+          "value": "CloudFoundry",
+          "type": "TEXT"
+        },
+        {
+          "name": "TEST_RESULT_FOR_AD",
+          "value": "",
+          "type": "TEXT"
+        },
+        {
+          "name": "DRA_SERVER",
+          "value": "https:\/\/dra.stage1.mybluemix.net",
+          "type": "TEXT"
+        }
+      ],
+      "successful": false,
+      "running": false,
+      "requestedBy": "ac38889a-03a5-46f3-91a3-1fb72de4b704"
+    },
+    "id": "7ed0dc9b-8f37-4d1b-8903-f3e9d6d493e6",
+    "toolchain_id": "7afb7d1f-5091-456d-b4a2-95d9e6feefb6",
+    "id_type": "tool_id",
+    "timestamp": 1454081595874
+  }
+}
+

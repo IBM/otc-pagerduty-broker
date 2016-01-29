@@ -239,14 +239,32 @@ test('PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
     });
 });
 
-test('PagerDuty Broker - Test Messaging Store Like Event', function (t) {
+test('PagerDuty Broker - Test Messaging Store Like Event - AD start failed', function (t) {
 	t.plan(1);
 	
 	// Message Store Event endpoint
 	var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
 
 	// Simulate a Pipeline event
-	var message_store_pipeline_event = require("./active_deploy_job_failed");
+	var message_store_pipeline_event = require("./active_deploy_start_job_failed");
+	message_store_pipeline_event.toolchain_id = mockToolchainId;
+	message_store_pipeline_event.instance_id = mockServiceInstanceId;
+	
+    postRequest(messagingEndpoint, {header: header, body: JSON.stringify(message_store_pipeline_event)})
+        .then(function(resultFromPost) {
+            t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
+        });	
+	
+});
+
+test('PagerDuty Broker - Test Messaging Store Like Event - AD finish failed', function (t) {
+	t.plan(1);
+	
+	// Message Store Event endpoint
+	var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
+
+	// Simulate a Pipeline event
+	var message_store_pipeline_event = require("./active_deploy_finish_job_failed");
 	message_store_pipeline_event.toolchain_id = mockToolchainId;
 	message_store_pipeline_event.instance_id = mockServiceInstanceId;
 	
@@ -264,7 +282,7 @@ test('PagerDuty Broker - Test Messaging Store Like Event - Unknown service_id', 
 	var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
 
 	// Simulate a Pipeline event
-	var message_store_pipeline_event = require("./active_deploy_job_failed");
+	var message_store_pipeline_event = require("./active_deploy_start_job_failed");
 	message_store_pipeline_event.toolchain_id = mockToolchainId;
 	message_store_pipeline_event.instance_id = mockServiceInstanceId;
 	message_store_pipeline_event.service_id = 'unknown';
