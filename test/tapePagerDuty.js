@@ -222,6 +222,27 @@ test('PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', 
     });
 });
 
+test('PagerDuty Broker - Test PATCH update instance with account_id and api_key', function (t) {
+    t.plan(3);
+	
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+    var pagerdutyAccountId2 = nconf.get("pagerduty-account-2");
+    var pagerdutyApiKey2 = nconf.get("pagerduty-api-key-2");
+    body.parameters = {
+    	"account_id": pagerdutyAccountId2,
+    	"api_key": pagerdutyApiKey2
+    };
+    
+    patchRequest(url, {header: header, body: JSON.stringify(body)})
+        .then(function(resultFromPatch) {
+            t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
+            t.equal(resultFromPatch.body.parameters.account_id, pagerdutyAccountId2, 'did the put instance call return the right account id?');
+            t.equal(resultFromPatch.body.parameters.api_key, pagerdutyApiKey2, 'did the put instance call return the right API key?');
+            // TODO: check that the service is created on new account
+    });    				
+});
+
 test('PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
     t.plan(2);
 
@@ -401,12 +422,17 @@ function assertServiceAndUser(pagerduty, t) {
 }
 
 function getPostServiceInstanceParameters(pagerduty) {
+	var user_phone;
+	if (pagerduty.user_phone_country) {
+		user_phone = "+" + pagerduty.user_phone_country + " " + pagerduty.user_phone_number;
+	} else if (pagerduty.user_phone_number)
+		user_phone = pagerduty.user_phone_number;
 	return {
 		account_id: pagerdutyAccountId,
 		api_key: pagerdutyApiKey,
 		service_name: pagerduty.service_name,
 		user_email: pagerduty.user_email,
-		user_phone: "+" + pagerduty.user_phone_country + " " + pagerduty.user_phone_number
+		user_phone: user_phone
 	};
 }
 
@@ -463,6 +489,25 @@ function getRequest(url, options) {
                 return {
                     "statusCode": res[0].statusCode,
                     "body": res[1]
+                };
+            } else {
+                return {
+                    "statusCode": res[0].statusCode
+                };
+            }
+        });
+}
+
+function patchRequest(url, options) {
+    var params = initializeRequestParams(url, options);
+
+    var patch = Q.nbind(request.patch, this);
+    return patch(params.uri, {body: params.body, headers: params.headers})
+        .then(function(res) {
+            if(res[1]) {
+                   return {
+                    "statusCode": res[0].statusCode,
+                    "body": JSON.parse(res[1])
                 };
             } else {
                 return {
