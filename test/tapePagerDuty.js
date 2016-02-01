@@ -243,6 +243,60 @@ test('PagerDuty Broker - Test PATCH update instance with account_id and api_key'
     });    				
 });
 
+test('PagerDuty Broker - Test PATCH update service_name', function (t) {
+    t.plan(2);
+	
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+    var newServiceName = pagerduty.service_name + " (New)";
+    body.parameters = {
+    	"service_name": newServiceName
+    };
+    
+    patchRequest(url, {header: header, body: JSON.stringify(body)})
+        .then(function(resultFromPatch) {
+            t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
+            t.equal(resultFromPatch.body.parameters.service_name, newServiceName, 'did the put instance call return the right service name?');
+            // TODO: check that the service is created 
+    });    				
+});
+
+test('PagerDuty Broker - Test PATCH update user_email', function (t) {
+    t.plan(2);
+	
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+    var newEmail = "user" + currentTime + ".new@ibm.com";
+    body.parameters = {
+    	"user_email": newEmail
+    };
+    
+    patchRequest(url, {header: header, body: JSON.stringify(body)})
+        .then(function(resultFromPatch) {
+            t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
+            t.equal(resultFromPatch.body.parameters.user_email, newEmail, 'did the put instance call return the right email?');
+            // TODO: check that the service is updated 
+    });    				
+});
+
+test('PagerDuty Broker - Test PATCH update user_phone', function (t) {
+    t.plan(2);
+	
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+    var newPhone = "+33 1231456";
+    body.parameters = {
+    	"user_phone": newPhone
+    };
+    
+    patchRequest(url, {header: header, body: JSON.stringify(body)})
+        .then(function(resultFromPatch) {
+            t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
+            t.equal(resultFromPatch.body.parameters.user_phone, newPhone, 'did the put instance call return the right phone?');
+            // TODO: check that the service is updated 
+    });    				
+});
+
 test('PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
     t.plan(2);
 
