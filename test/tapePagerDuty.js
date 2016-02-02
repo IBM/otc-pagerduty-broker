@@ -189,7 +189,7 @@ test('PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', 
     t.plan(6);
     
     var pagerduty4 = _.clone(pagerduty);
-    pagerduty4.service_name += "4";
+    pagerduty4.service_name = "(4) " + pagerduty.service_name;
     pagerduty4.user_email = "user" + currentTime + "_4@ibm.com";
 
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
@@ -223,24 +223,37 @@ test('PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', 
 });
 
 test('PagerDuty Broker - Test PATCH update instance with account_id and api_key', function (t) {
-    t.plan(3);
+    t.plan(4);
 	
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var pagerduty5 = _.clone(pagerduty);
+    pagerduty5.service_name = "(5) " + pagerduty.service_name;
+    pagerduty5.user_email = "user" + currentTime + "_5@ibm.com";
+
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId + "_5";
     var body = {};
-    var pagerdutyAccountId2 = nconf.get("pagerduty-account-2");
-    var pagerdutyApiKey2 = nconf.get("pagerduty-api-key-2");
-    body.parameters = {
-    	"account_id": pagerdutyAccountId2,
-    	"api_key": pagerdutyApiKey2
-    };
-    
-    patchRequest(url, {header: header, body: JSON.stringify(body)})
-        .then(function(resultFromPatch) {
-            t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
-            t.equal(resultFromPatch.body.parameters.account_id, pagerdutyAccountId2, 'did the put instance call return the right account id?');
-            t.equal(resultFromPatch.body.parameters.api_key, pagerdutyApiKey2, 'did the put instance call return the right API key?');
-            // TODO: check that the service is created on new account
-    });    				
+    body.service_id = 'pagerduty';
+    body.organization_guid = nconf.get('test_app_org_guid');
+    body.parameters = getPostServiceInstanceParameters(pagerduty5);;
+
+    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+        t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
+        
+	    var body = {};
+	    var pagerdutyAccountId2 = nconf.get("pagerduty-account-2");
+	    var pagerdutyApiKey2 = nconf.get("pagerduty-api-key-2");
+	    body.parameters = {
+	    	"account_id": pagerdutyAccountId2,
+	    	"api_key": pagerdutyApiKey2
+	    };
+	    
+	    patchRequest(url, {header: header, body: JSON.stringify(body)})
+	        .then(function(resultFromPatch) {
+	            t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
+	            t.equal(resultFromPatch.body.parameters.account_id, pagerdutyAccountId2, 'did the put instance call return the right account id?');
+	            t.equal(resultFromPatch.body.parameters.api_key, pagerdutyApiKey2, 'did the put instance call return the right API key?');
+	            // TODO: check that the service is created on new account
+	    });   
+    });
 });
 
 test('PagerDuty Broker - Test PATCH update service_name', function (t) {
@@ -248,7 +261,8 @@ test('PagerDuty Broker - Test PATCH update service_name', function (t) {
 	
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
-    var newServiceName = pagerduty.service_name + " (New)";
+    var newServiceName = "(Updated) " + pagerduty.service_name;
+    pagerduty.service_name = newServiceName; //update for next tests
     body.parameters = {
     	"service_name": newServiceName
     };
@@ -262,11 +276,12 @@ test('PagerDuty Broker - Test PATCH update service_name', function (t) {
 });
 
 test('PagerDuty Broker - Test PATCH update user_email', function (t) {
-    t.plan(2);
+    t.plan(15);
 	
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
-    var newEmail = "user" + currentTime + ".new@ibm.com";
+    var newEmail = "user" + currentTime + ".updated@ibm.com";
+    pagerduty.user_email = newEmail; //update for next tests
     body.parameters = {
     	"user_email": newEmail
     };
@@ -275,16 +290,20 @@ test('PagerDuty Broker - Test PATCH update user_email', function (t) {
         .then(function(resultFromPatch) {
             t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
             t.equal(resultFromPatch.body.parameters.user_email, newEmail, 'did the put instance call return the right email?');
-            // TODO: check that the service is updated 
+            var newPagerDuty = _.clone(pagerduty);
+            newPagerDuty.user_email = newEmail;
+            // check that the service is updated 
+	        assertServiceAndUser(newPagerDuty, t);
     });    				
 });
 
 test('PagerDuty Broker - Test PATCH update user_phone', function (t) {
-    t.plan(2);
+    t.plan(15);
 	
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
     var newPhone = "+33 1231456";
+    pagerduty.user_phone = newPhone; //update for next tests
     body.parameters = {
     	"user_phone": newPhone
     };
@@ -293,8 +312,11 @@ test('PagerDuty Broker - Test PATCH update user_phone', function (t) {
         .then(function(resultFromPatch) {
             t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
             t.equal(resultFromPatch.body.parameters.user_phone, newPhone, 'did the put instance call return the right phone?');
-            // TODO: check that the service is updated 
-    });    				
+            var newPagerDuty = _.clone(pagerduty);
+            newPagerDuty.user_phone = newPhone;
+            // check that the service is updated 
+	        assertServiceAndUser(newPagerDuty, t);
+	});    				
 });
 
 test('PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
@@ -421,29 +443,21 @@ function assertService(pagerduty, t, callback) {
 		headers: pagerdutyHeaders
 	}, function(err, reqRes, body) {
         t.equal(reqRes.statusCode, 200, 'did the get service call succeed?');
-        var service;
-        if (body.services) {
-	        for (var i=0; i<body.services.length; i++){
-	        	var currentService = body.services[i];
-	        	if (currentService.name == pagerduty.service_name) {
-	        		service = currentService;
-	        		break;
-	        	}
-	        }
-        }
-        t.ok(service, 'was a service found?');
+    	var foundServices = _.where(body.services, {"name": pagerduty.service_name});
+        t.equal(foundServices.length, 1, 'was exactly 1 service found?');
+        var service = foundServices[0];
         if (callback)
         	return callback(pagerduty, t, pagerdutyHeaders, service);
         return;
 	});
 }
 
-
+// plan == 13
 function assertServiceAndUser(pagerduty, t) {
 	assertService(pagerduty, t, function(pagerduty, t, pagerdutyHeaders, service) {
         var escalation_policy = service.escalation_policy;
         var userName = "Primary contact (" + pagerduty.user_email + ")";
-        t.equal(escalation_policy.name, "Call " + userName, 'was the right escalation policy created?');
+        t.equal(escalation_policy.name, "Policy for " + pagerduty.service_name, 'was the right escalation policy created?');
         var escalation_policy_url = pagerdutyApiUrl + "/escalation_policies/" + escalation_policy.id;
     	request.get({
     		uri: escalation_policy_url,
