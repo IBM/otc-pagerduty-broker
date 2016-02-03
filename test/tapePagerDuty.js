@@ -256,6 +256,24 @@ test('PagerDuty Broker - Test PATCH update instance with account_id and api_key'
     });
 });
 
+test('PagerDuty Broker - Test PATCH with invalid account_id', function (t) {
+    t.plan(2);
+	
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+    var newAccountId = "http://ibm.com";
+    body.parameters = {
+    	"account_id": newAccountId
+    };
+    
+    patchRequest(url, {header: header, body: JSON.stringify(body)})
+        .then(function(resultFromPatch) {
+            t.equal(resultFromPatch.statusCode, 400, 'did the patch instance call return a bad request?');
+            t.equal(resultFromPatch.body.description, "Invalid account_id: " + newAccountId, 'is the bad request message correct?');
+    });    				
+});
+
+
 test('PagerDuty Broker - Test PATCH update service_name', function (t) {
     t.plan(2);
 	
