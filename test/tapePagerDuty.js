@@ -109,7 +109,7 @@ test('PagerDuty Broker - Test Authentication', function (t) {
 });
 
 test('PagerDuty Broker - Test PUT instance', function (t) {
-    t.plan(18);
+    t.plan(16);
 
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
@@ -147,7 +147,7 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
 });
 
 test('PagerDuty Broker - Test PUT instance with names being prefix of existing ones', function (t) {
-    t.plan(17);
+    t.plan(15);
     
     var pagerduty2 = _.clone(pagerduty);
     pagerduty2.service_name += " 2 Suffix";
@@ -276,7 +276,7 @@ test('PagerDuty Broker - Test PATCH update service_name', function (t) {
 });
 
 test('PagerDuty Broker - Test PATCH update user_email', function (t) {
-    t.plan(15);
+    t.plan(13);
 	
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
@@ -298,12 +298,12 @@ test('PagerDuty Broker - Test PATCH update user_email', function (t) {
 });
 
 test('PagerDuty Broker - Test PATCH update user_phone', function (t) {
-    t.plan(15);
+    t.plan(24);
 	
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
-    var newPhone = "+33 1231456";
-    pagerduty.user_phone = newPhone; //update for next tests
+    var newUserPhoneNumber = "987654321"
+    var newPhone = "+" + pagerduty.user_phone_country + " " + newUserPhoneNumber;
     body.parameters = {
     	"user_phone": newPhone
     };
@@ -313,9 +313,11 @@ test('PagerDuty Broker - Test PATCH update user_phone', function (t) {
             t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
             t.equal(resultFromPatch.body.parameters.user_phone, newPhone, 'did the put instance call return the right phone?');
             var newPagerDuty = _.clone(pagerduty);
-            newPagerDuty.user_phone = newPhone;
+            newPagerDuty.user_phone_number = newUserPhoneNumber;
             // check that the service is updated 
 	        assertServiceAndUser(newPagerDuty, t);
+	        // check that the old phone number is still registered
+	        assertServiceAndUser(pagerduty, t);
 	});    				
 });
 
@@ -452,7 +454,7 @@ function assertService(pagerduty, t, callback) {
 	});
 }
 
-// plan == 13
+// plan == 11
 function assertServiceAndUser(pagerduty, t) {
 	assertService(pagerduty, t, function(pagerduty, t, pagerdutyHeaders, service) {
         var escalation_policy = service.escalation_policy;
@@ -478,11 +480,9 @@ function assertServiceAndUser(pagerduty, t) {
 				headers: pagerdutyHeaders
 			}, function(err, reqRes, body) {
 				t.equal(reqRes.statusCode, 200, 'did the get contact methods call succeed?');
-				t.equal(body.total, 2, 'were 2 contact methods found?');
-				var contact_method = body.contact_methods[1];
-				t.equal(contact_method.type, "phone", 'is the contact method\'s type phone?');
-				t.equal(contact_method.country_code, Number(pagerduty.user_phone_country), 'is the contact method\'s country right?');
-				t.equal(contact_method.phone_number, pagerduty.user_phone_number, 'is the contact method\'s phone number right?');
+				t.ok(body.contact_methods, 'were contact methods found?');
+				var contact_method = _.findWhere(body.contact_methods, {"type": "phone", "country_code": Number(pagerduty.user_phone_country), "phone_number": pagerduty.user_phone_number});
+				t.ok(contact_method, 'was the phone contact method found (+' + pagerduty.user_phone_country + ' ' + pagerduty.user_phone_number + ')?');
 			});
     	});
         
