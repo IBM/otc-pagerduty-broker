@@ -3,6 +3,7 @@
 	"services": {
 		"pagerduty": "https://pagerduty.com",
 		"otc-api": "https://otc-api.stage1.ng.bluemix.net/api/v1",
-		"otc-webhook-manager" : "https://otc-webhook-manager.stage1.ng.bluemix.net"	
-	}
+        "ibm-snip-api" : "http://ibm.biz/api"
+	},
+	"IBM_SNIP_API_KEY": "605b3102fea4fa7478eb9add78ba28d9"
 }
