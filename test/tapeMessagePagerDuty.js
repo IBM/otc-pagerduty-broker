@@ -6,7 +6,7 @@
  * Use, duplication or disclosure restricted by GSA ADP Schedule
  * Contract with IBM Corp.
  */
-var nconf = require('nconf'),
+var nconf = require('nconf')
     request = require("request"),
     path = require('path'),
     Q = require('q'),
@@ -83,22 +83,26 @@ test('PagerDuty Broker - Test Incident Trigger', function (t) {
 	// Simulate a Pipeline event
 	var message_store_pipeline_event = require("./active_deploy_start_job_failed");
 	
-	message_store_pipeline_event.toolchain_id = "54d2ebcf-fa38-4ed7-81a4-dea202e293ea";
+	message_store_pipeline_event.toolchain_id = "32a821a2-2012-4c6e-972f-b296512017e7";
 
-	message_store_pipeline_event.payload.pipeline.id = "e55f61e2-47bb-4390-8fef-dac860daa5b1";
+	message_store_pipeline_event.payload.pipeline.id = "1ebdf839-b269-463d-acce-9f73bf6221ce";
 	
-	var service_key = "bb8398fc50c242e7bd1f0ca7e05ff0a0";
+	var service_key = "9c2d805e49484cc8aa530a9859567239";
 
 	nconf.set("services:otc-api", "https://otc-api.stage1.ng.bluemix.net/api/v1");
-
+	
 	eventPipeline(message_store_pipeline_event.toolchain_id, message_store_pipeline_event.payload, header.Authorization, function(err, description) {
 		t.equals(err, null, "No error reported during message creation?");
 		t.comment(description);
 		
-		pagerdutyUtils.postAlert("logPrefix", service_key, description, function(err, body) {
-			t.equals(err, null, "No error reported during pagerduty trigger ?");
-			t.comment(JSON.stringify(body));
-		});
+		if (true) {
+			pagerdutyUtils.postAlert("logPrefix", service_key, description, function(err, body) {
+				t.equals(err, null, "No error reported during pagerduty trigger ?");
+				t.comment(JSON.stringify(body));
+			});			
+		} else {
+			t.ok(description);			
+		}
 	});
 
 });
