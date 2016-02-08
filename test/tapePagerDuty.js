@@ -109,7 +109,7 @@ test('PagerDuty Broker - Test Authentication', function (t) {
 });
 
 test('PagerDuty Broker - Test PUT instance', function (t) {
-    t.plan(16);
+    t.plan(17);
 
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
@@ -125,23 +125,30 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
                     body.organization_guid = nconf.get('test_app_org_guid');
                     
                     body.parameters = getPostServiceInstanceParameters(pagerduty);
+                    body.parameters.api_key = "wrong" + body.parameters.api_key; 
                     
                     //t.comment(pagerduty_service_name);
-                    
                     putRequest(url, {header: header, body: JSON.stringify(body)})
-                        .then(function(results) {
-                            t.equal(results.statusCode, 200, 'did the put instance call succeed?');
-                            t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
-                            
-                            // Ensure PagerDuty service and user have been created
-                            assertServiceAndUser(pagerduty, t);
-                            
-                            // Ensure dashboard url is accessible
-                            var dashboardUrl = results.body.dashboard_url;
-                            getRequest(dashboardUrl, {}) .then(function(getResults) {
-                                t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
-                            });
-                        });
+                    .then(function(results) {
+                        t.equal(results.statusCode, 400, 'did the put instance with wrong api_key failed?');
+                    	
+                        body.parameters = getPostServiceInstanceParameters(pagerduty);
+                    
+	                    putRequest(url, {header: header, body: JSON.stringify(body)})
+	                        .then(function(results) {
+	                            t.equal(results.statusCode, 200, 'did the put instance call succeed?');
+	                            t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+	                            
+	                            // Ensure PagerDuty service and user have been created
+	                            assertServiceAndUser(pagerduty, t);
+	                            
+	                            // Ensure dashboard url is accessible
+	                            var dashboardUrl = results.body.dashboard_url;
+	                            getRequest(dashboardUrl, {}) .then(function(getResults) {
+	                                t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
+	                            });
+	                        });
+                    });
                 });
     });
 });
@@ -254,6 +261,21 @@ test('PagerDuty Broker - Test PATCH update instance with account_id and api_key'
 	            // TODO: check that the service is created on new account
 	    });   
     });
+});
+
+test('PagerDuty Broker - Test PATCH wrong api_key', function (t) {
+    t.plan(1);
+	
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+    body.parameters = {
+    	"api_key": "wrong"
+    };
+    
+    patchRequest(url, {header: header, body: JSON.stringify(body)})
+        .then(function(resultFromPatch) {
+            t.equal(resultFromPatch.statusCode, 400, 'did the patch instance call with wrong api_key failed?');
+    });    				
 });
 
 test('PagerDuty Broker - Test PATCH with invalid account_id', function (t) {
