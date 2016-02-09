@@ -109,7 +109,7 @@ test('PagerDuty Broker - Test Authentication', function (t) {
 });
 
 test('PagerDuty Broker - Test PUT instance', function (t) {
-    t.plan(17);
+    t.plan(22);
 
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
@@ -154,7 +154,7 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
 });
 
 test('PagerDuty Broker - Test PUT instance with names being prefix of existing ones', function (t) {
-    t.plan(15);
+    t.plan(20);
     
     var pagerduty2 = _.clone(pagerduty);
     pagerduty2.service_name += " 2 Suffix";
@@ -316,7 +316,7 @@ test('PagerDuty Broker - Test PATCH update service_name', function (t) {
 });
 
 test('PagerDuty Broker - Test PATCH update user_email', function (t) {
-    t.plan(13);
+    t.plan(18);
 	
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
@@ -338,7 +338,7 @@ test('PagerDuty Broker - Test PATCH update user_email', function (t) {
 });
 
 test('PagerDuty Broker - Test PATCH update user_phone', function (t) {
-    t.plan(24);
+    t.plan(34);
 	
     var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
@@ -494,7 +494,7 @@ function assertService(pagerduty, t, callback) {
 	});
 }
 
-// plan == 11
+// plan == 15
 function assertServiceAndUser(pagerduty, t) {
 	assertService(pagerduty, t, function(pagerduty, t, pagerdutyHeaders, service) {
         var escalation_policy = service.escalation_policy;
@@ -521,8 +521,39 @@ function assertServiceAndUser(pagerduty, t) {
 			}, function(err, reqRes, body) {
 				t.equal(reqRes.statusCode, 200, 'did the get contact methods call succeed?');
 				t.ok(body.contact_methods, 'were contact methods found?');
-				var contact_method = _.findWhere(body.contact_methods, {"type": "phone", "country_code": Number(pagerduty.user_phone_country), "phone_number": pagerduty.user_phone_number});
-				t.ok(contact_method, 'was the phone contact method found (+' + pagerduty.user_phone_country + ' ' + pagerduty.user_phone_number + ')?');
+				var phone_contact_method = _.findWhere(body.contact_methods, {"type": "phone", "country_code": Number(pagerduty.user_phone_country), "phone_number": pagerduty.user_phone_number});
+				t.ok(phone_contact_method, 'was the phone contact method found (+' + pagerduty.user_phone_country + ' ' + pagerduty.user_phone_number + ')?');
+				var sms_contact_method = _.findWhere(body.contact_methods, {"type": "SMS", "country_code": Number(pagerduty.user_phone_country), "phone_number": pagerduty.user_phone_number});
+				t.ok(sms_contact_method, 'was the SMS contact method found (+' + pagerduty.user_phone_country + ' ' + pagerduty.user_phone_number + ')?');
+				
+				// Check the notification rules for SMS and Phone
+				var notification_rules_url = pagerdutyApiUrl + "/users/" + target.id + "/notification_rules";
+				request.get({
+					uri: notification_rules_url,
+					json: true,
+					headers: pagerdutyHeaders
+				}, function(err, reqRes, body) {
+					t.equal(reqRes.statusCode, 200, 'did the get notification rules call succeed?');
+					t.ok(body.notification_rules, 'were notification rules found?');
+					var phone_rule;
+					var sms_rule;
+					if (body.notification_rules) {
+						_.each(body.notification_rules, function(notificationRule) {
+							var contact_method = notificationRule.contact_method;
+							if (contact_method) {
+								if (contact_method.country_code==Number(pagerduty.user_phone_country) && contact_method.phone_number==pagerduty.user_phone_number) {
+									if (contact_method.type=="SMS") {
+										sms_rule = notificationRule;
+									} else if (contact_method.type=="phone")
+										phone_rule = notificationRule;
+								}
+							}						
+						});
+					}
+					t.ok(phone_rule, 'was the Phone Notification rule found (+' + pagerduty.user_phone_country + ' ' + pagerduty.user_phone_number + ')?');					
+					t.ok(sms_rule, 'was the SMS Notification rule found (+' + pagerduty.user_phone_country + ' ' + pagerduty.user_phone_number + ')?');
+				});
+				
 			});
     	});
         
