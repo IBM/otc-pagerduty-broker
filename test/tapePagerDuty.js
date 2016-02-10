@@ -11,6 +11,7 @@ var nconf = require('nconf'),
     path = require('path'),
     Q = require('q'),
     request = require("request"),
+    async = require("async"),
     tiamUtils = require('./tiamTestUtils.js'),
     test = require('tape'),
     _ = require('underscore')
@@ -107,6 +108,74 @@ test('PagerDuty Broker - Test Authentication', function (t) {
                     });
     });
 });
+
+test('PagerDuty Broker - Test PUT instance with wrong parameters', function (t) {
+    t.plan(6);
+
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+    
+    async.series([
+       function(callback) {
+    	   // no body
+    	    putRequest(url, {header: header, body: null})
+            .then(function(resultNoBody) {
+                t.equal(resultNoBody.statusCode, 400, 'did the put instance call with no body fail?');
+                callback();
+            });
+       },
+       function (callback) {
+           body.service_id = 'pagerduty';
+           putRequest(url, {header: header, body: JSON.stringify(body)})
+           .then(function(resultNoOrg) {
+                t.equal(resultNoOrg.statusCode, 400, 'did the put instance call with no service id fail?');
+                callback();
+           });    	   
+       }, 
+       function (callback) {
+           body.organization_guid = nconf.get('test_app_org_guid');
+           body.parameters = getPostServiceInstanceParameters(pagerduty);
+           body.parameters.api_key = "wrong" + body.parameters.api_key; 
+           putRequest(url, {header: header, body: JSON.stringify(body)})
+           .then(function(results) {
+               t.equal(results.statusCode, 400, 'did the put instance with wrong api_key failed?');
+               callback();
+           });    	   
+       },
+       function (callback) {
+           body.parameters = getPostServiceInstanceParameters(pagerduty);
+           body.parameters.account_id = "wrong" + body.parameters.account_id; 
+           putRequest(url, {header: header, body: JSON.stringify(body)})
+           .then(function(results) {
+               t.equal(results.statusCode, 400, 'did the put instance with wrong account_id failed?');
+               callback();
+           });    	   
+       },
+       function (callback) {
+           body.parameters = getPostServiceInstanceParameters(pagerduty);
+           body.parameters.user_email = "test@gmail"; 
+           putRequest(url, {header: header, body: JSON.stringify(body)})
+           .then(function(results) {
+               t.equal(results.statusCode, 400, 'did the put instance with wrong email failed?');
+               callback();
+           });    	   
+       },
+       function (callback) {
+           body.parameters = getPostServiceInstanceParameters(pagerduty);
+           body.parameters.user_phone = "0123"; 
+           putRequest(url, {header: header, body: JSON.stringify(body)})
+           .then(function(results) {
+               t.equal(results.statusCode, 400, 'did the put instance with wrong phone failed?');
+               callback();
+           });    	   
+       }
+    ], function(err, results) {
+    	if (err) {
+    		t.fail(err);
+    	}
+    });
+});
+
 
 test('PagerDuty Broker - Test PUT instance', function (t) {
     t.plan(22);
@@ -255,6 +324,7 @@ test('PagerDuty Broker - Test PATCH update instance with account_id and api_key'
 	    
 	    patchRequest(url, {header: header, body: JSON.stringify(body)})
 	        .then(function(resultFromPatch) {
+	            //t.comment(JSON.stringify(resultFromPatch));
 	            t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
 	            t.equal(resultFromPatch.body.parameters.account_id, pagerdutyAccountId2, 'did the put instance call return the right account id?');
 	            t.equal(resultFromPatch.body.parameters.api_key, pagerdutyApiKey2, 'did the put instance call return the right API key?');
@@ -559,6 +629,7 @@ function assertServiceAndUser(pagerduty, t) {
         
 	});
 }
+
 
 function getPostServiceInstanceParameters(pagerduty) {
 	var user_phone;
