@@ -315,11 +315,30 @@ test('PagerDuty Broker - Test PUT instance missing phone number', function (t) {
     //t.comment(JSON.stringify(body.parameters));
 
     putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
-        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
+        t.equal(results.statusCode, 200, 'did the put instance call succeed?');
         t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
         
         // Ensure PagerDuty service and user have been created
         assertServiceAndUser(pagerduty5, t);
+    });
+});
+
+test('PagerDuty Broker - Test PUT instance missing email', function (t) {
+    t.plan(1);
+    
+    var pagerduty6 = _.clone(pagerduty);
+    pagerduty6.service_name = "(6) " + pagerduty.service_name;
+    delete pagerduty6.user_email;
+
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId + '_6';
+    var body = {};
+    body.service_id = 'pagerduty';
+    body.organization_guid = nconf.get('test_app_org_guid');
+    body.parameters = getPostServiceInstanceParameters(pagerduty6);
+    //t.comment(JSON.stringify(body.parameters));
+
+    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+        t.equal(results.statusCode, 400, 'did the put instance call fail with a bad request?');
     });
 });
 
