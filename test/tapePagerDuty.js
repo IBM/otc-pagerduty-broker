@@ -93,25 +93,42 @@ test('PagerDuty Broker - Test Authentication', function (t) {
         'Authorization': ''
     };
 
-    putRequest(serviceInstanceUrl, {header: null, body: JSON.stringify(body)})
-        .then(function(resultNoHeader) {
-            t.equal(resultNoHeader.statusCode, 401, 'did the authentication request with no Auth header fail?');
-
-            putRequest(serviceInstanceUrl, {header: auth, body: JSON.stringify(body)})
-                .then(function(resultNoToken) {
-                    t.equal(resultNoToken.statusCode, 401, 'did the authentication request with an empty Auth header fail?');
-                });
-                auth.Authorization = 'token';
-                putRequest(serviceInstanceUrl, {header: auth, body: JSON.stringify(body)})
-                    .then(function(resultNoBearer) {
-                        t.equal(resultNoBearer.statusCode, 401, 'did the authentication request with no bearer in the Auth header fail?');
-                    });
-                    auth.Authorization = 'BEARER token';
-                    putRequest(serviceInstanceUrl, {header: auth, body: JSON.stringify(body)})
-                    .then(function(resultInvalidToken) {
-                        t.equal(resultInvalidToken.statusCode, 401, 'did the authentication request an invalid token in the Auth header fail?');
-                    });
-    });
+	async.series([
+		function(callback) {
+			// no header
+			putRequest(serviceInstanceUrl, {header: null, body: JSON.stringify(body)}).then(function(resultNoHeader) {
+				t.equal(resultNoHeader.statusCode, 401, 'did the authentication request with no Auth header fail?');
+				callback();
+			});
+		},
+		function(callback) {
+			// empty header
+			putRequest(serviceInstanceUrl, {header: auth, body: JSON.stringify(body)}).then(function(resultEmptyHeader) {
+                t.equal(resultEmptyHeader.statusCode, 401, 'did the authentication request with an empty Auth header fail?');
+				callback();
+			});
+		},
+		function(callback) {
+			// no bearer token
+            auth.Authorization = 'token';
+            putRequest(serviceInstanceUrl, {header: auth, body: JSON.stringify(body)}).then(function(resultNoBearer) {
+				t.equal(resultNoBearer.statusCode, 401, 'did the authentication request with no bearer in the Auth header fail?');
+				callback();
+			});
+		},
+		function(callback) {
+			// invalid bearer token
+            auth.Authorization = 'BEARER token';
+            putRequest(serviceInstanceUrl, {header: auth, body: JSON.stringify(body)}).then(function(resultInvalidToken) {
+                t.equal(resultInvalidToken.statusCode, 401, 'did the authentication request an invalid token in the Auth header fail?');
+				callback();
+			});
+		}
+	], function(err, results) {
+   		if (err) {
+   			t.fail(err);
+   		}
+	});
 });
 
 test('PagerDuty Broker - Test PUT instance with wrong parameters', function (t) {
@@ -183,45 +200,25 @@ test('PagerDuty Broker - Test PUT instance with wrong parameters', function (t) 
 
 test('PagerDuty Broker - Test PUT instance', function (t) {
 	testNumber++;
-    t.plan(22);
+    t.plan(19);
 
     var body = {};
-    putRequest(serviceInstanceUrl, {header: header, body: null})
-        .then(function(resultNoBody) {
-            t.equal(resultNoBody.statusCode, 400, 'did the put instance call with no body fail?');
-            body.service_id = 'pagerduty';
-
-            putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
-                .then(function(resultNoOrg) {
-                    t.equal(resultNoOrg.statusCode, 400, 'did the put instance call with no service id fail?');
-                    body.organization_guid = nconf.get('test_app_org_guid');
-                    
-                    body.parameters = getPostServiceInstanceParameters(pagerduty);
-                    body.parameters.api_key = "wrong" + body.parameters.api_key; 
-                    
-                    //t.comment(pagerduty_service_name);
-                    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
-                    .then(function(results) {
-                        t.equal(results.statusCode, 400, 'did the put instance with wrong api_key failed?');
-                    	
-                        body.parameters = getPostServiceInstanceParameters(pagerduty);
-                    
-	                    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
-	                        .then(function(results) {
-	                            t.equal(results.statusCode, 200, 'did the put instance call succeed?');
-	                            t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
-	                            
-	                            // Ensure PagerDuty service and user have been created
-	                            assertServiceAndUser(pagerduty, t);
-	                            
-	                            // Ensure dashboard url is accessible
-	                            var dashboardUrl = results.body.dashboard_url;
-	                            getRequest(dashboardUrl, {}) .then(function(getResults) {
-	                                t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
-	                            });
-	                        });
-                    });
-                });
+    body.service_id = 'pagerduty';
+    body.organization_guid = nconf.get('test_app_org_guid');
+    body.parameters = getPostServiceInstanceParameters(pagerduty);
+    
+    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
+        t.equal(results.statusCode, 200, 'did the put instance call succeed?');
+        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+        
+        // Ensure PagerDuty service and user have been created
+        assertServiceAndUser(pagerduty, t);
+        
+        // Ensure dashboard url is accessible
+        var dashboardUrl = results.body.dashboard_url;
+        getRequest(dashboardUrl, {}) .then(function(getResults) {
+            t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
+        });
     });
 });
 
@@ -229,74 +226,95 @@ test('PagerDuty Broker - Test PUT instance with names being prefix of existing o
 	testNumber++;
     t.plan(20);
     
-    var pagerduty2 = _.clone(pagerduty);
-    pagerduty2.service_name = getTestServiceName() + " Suffix";
-    pagerduty2.user_email = getTestUserEmail() + ".suffix";
-
     var body = {};
     body.service_id = 'pagerduty';
     body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty2);;
 
-    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
-        t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
-
-        var pagerduty3 = _.clone(pagerduty);
-        pagerduty3.service_name = getTestServiceName();
-	    pagerduty3.user_email = getTestUserEmail();
-	
-	    body.parameters = getPostServiceInstanceParameters(pagerduty3);;
-	
-	    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
-	        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
-	        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
-	        
-	        // Ensure PagerDuty service and user have been created
-	        assertServiceAndUser(pagerduty3, t);
-	        
-	        // Ensure dashboard url is accessible
-	        var dashboardUrl = results.body.dashboard_url;
-	        getRequest(dashboardUrl, {}) .then(function(getResults) {
-	            t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
-	        });
-	    });
-    });
+	async.series([
+		function(callback) {
+			// instance with suffix names
+		    var pagerduty2 = _.clone(pagerduty);
+		    pagerduty2.service_name = getTestServiceName() + " Suffix";
+		    pagerduty2.user_email = getTestUserEmail() + ".suffix";
+    		body.parameters = getPostServiceInstanceParameters(pagerduty2);;
+			putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
+        		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
+				callback();
+			});
+		},
+		function(callback) {
+			// instance with prefix names
+			var pagerduty3 = _.clone(pagerduty);
+	        pagerduty3.service_name = getTestServiceName();
+		    pagerduty3.user_email = getTestUserEmail();
+		    body.parameters = getPostServiceInstanceParameters(pagerduty3);;
+		    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
+		        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
+		        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+		        
+		        // Ensure PagerDuty service and user have been created
+		        assertServiceAndUser(pagerduty3, t);
+		        
+		        // Ensure dashboard url is accessible
+		        var dashboardUrl = results.body.dashboard_url;
+		        getRequest(dashboardUrl, {}).then(function(getResults) {
+		            t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
+					callback();
+		        });
+			});
+		}
+	], function(err, results) {
+		if (err) {
+			t.fail(err);
+		}
+	});
 });
 
 test('PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', function (t) {
 	testNumber++;
     t.plan(6);
     
-    var pagerduty2 = _.clone(pagerduty);
-    pagerduty2.service_name = getTestServiceName();
-    pagerduty2.user_email = getTestUserEmail();
-
     var body = {};
     body.service_id = 'pagerduty';
     body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty2);
 
-    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
-        t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
-
-        var pagerduty3 = {};
-        pagerduty3.service_name = pagerduty2.service_name;	
-	    body.parameters = getPostServiceInstanceParameters(pagerduty3);;
-	
-	    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
-	        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
-	        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
-	        
-	        // Ensure PagerDuty service is reused
-	        assertService(pagerduty3, t, null);
-	        
-	        // Ensure dashboard url is accessible
-	        var dashboardUrl = results.body.dashboard_url;
-	        getRequest(dashboardUrl, {}) .then(function(getResults) {
-	            t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
-	        });
-	    });
-    });
+    var pagerduty2 = _.clone(pagerduty);
+    pagerduty2.service_name = getTestServiceName();
+    pagerduty2.user_email = getTestUserEmail();
+	async.series([
+		function(callback) {
+			// first instance
+    		body.parameters = getPostServiceInstanceParameters(pagerduty2);;
+			putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
+        		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
+				callback();
+			});
+		},
+		function(callback) {
+			// second instance reuse service of first instance
+	        var pagerduty3 = {};
+	        pagerduty3.service_name = pagerduty2.service_name;	
+		    body.parameters = getPostServiceInstanceParameters(pagerduty3);;
+		    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
+		        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
+		        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+		        
+		        // Ensure PagerDuty service is reused
+		        assertService(pagerduty3, t, null);
+		        
+		        // Ensure dashboard url is accessible
+		        var dashboardUrl = results.body.dashboard_url;
+		        getRequest(dashboardUrl, {}) .then(function(getResults) {
+		            t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
+		            callback();
+		        });
+			});
+		}
+	], function(err, results) {
+		if (err) {
+			t.fail(err);
+		}
+	});
 });
 
 test('PagerDuty Broker - Test PUT instance missing phone number', function (t) {
@@ -345,6 +363,7 @@ test('PagerDuty Broker - Test PUT instance missing email', function (t) {
     });
 });
 
+// Patch tests
 test('PagerDuty Broker - Test PATCH update instance with account_id and api_key', function (t) {
 	testNumber++;
     t.plan(4);
