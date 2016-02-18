@@ -41,6 +41,8 @@ var event_endpoints = {};
 
 var mockServiceInstanceId = "1234";
 var mockToolchainId = "c234adsf-111";
+var serviceInstanceUrl = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+
 
 var header = {};
 var authenticationTokens = [];
@@ -56,7 +58,10 @@ var pagerdutyAccountId = nconf.get("pagerduty-account");
 var pagerdutyApiKey = nconf.get("pagerduty-api-key");
 var pagerdutyApiUrl = "https://" + pagerdutyAccountId + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
 
+var testNumber = 0;
+
 test('PagerDuty Broker - Test Setup', function (t) {
+	testNumber++;
     mockUserArray = nconf.get('userArray');
 
     t.plan(mockUserArray.length * 2);
@@ -77,9 +82,9 @@ test('PagerDuty Broker - Test Setup', function (t) {
 
 //Authentication testing
 test('PagerDuty Broker - Test Authentication', function (t) {
+	testNumber++;
     t.plan(4);
 
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {
         'service_id': 'pagerduty',
         'organization_guid': nconf.get('test_app_org_guid')
@@ -88,21 +93,21 @@ test('PagerDuty Broker - Test Authentication', function (t) {
         'Authorization': ''
     };
 
-    putRequest(url, {header: null, body: JSON.stringify(body)})
+    putRequest(serviceInstanceUrl, {header: null, body: JSON.stringify(body)})
         .then(function(resultNoHeader) {
             t.equal(resultNoHeader.statusCode, 401, 'did the authentication request with no Auth header fail?');
 
-            putRequest(url, {header: auth, body: JSON.stringify(body)})
+            putRequest(serviceInstanceUrl, {header: auth, body: JSON.stringify(body)})
                 .then(function(resultNoToken) {
                     t.equal(resultNoToken.statusCode, 401, 'did the authentication request with an empty Auth header fail?');
                 });
                 auth.Authorization = 'token';
-                putRequest(url, {header: auth, body: JSON.stringify(body)})
+                putRequest(serviceInstanceUrl, {header: auth, body: JSON.stringify(body)})
                     .then(function(resultNoBearer) {
                         t.equal(resultNoBearer.statusCode, 401, 'did the authentication request with no bearer in the Auth header fail?');
                     });
                     auth.Authorization = 'BEARER token';
-                    putRequest(url, {header: auth, body: JSON.stringify(body)})
+                    putRequest(serviceInstanceUrl, {header: auth, body: JSON.stringify(body)})
                     .then(function(resultInvalidToken) {
                         t.equal(resultInvalidToken.statusCode, 401, 'did the authentication request an invalid token in the Auth header fail?');
                     });
@@ -110,61 +115,60 @@ test('PagerDuty Broker - Test Authentication', function (t) {
 });
 
 test('PagerDuty Broker - Test PUT instance with wrong parameters', function (t) {
+	testNumber++;
     t.plan(6);
 
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
     
     async.series([
        function(callback) {
     	   // no body
-    	    putRequest(url, {header: header, body: null})
-            .then(function(resultNoBody) {
+    	    putRequest(serviceInstanceUrl, {header: header, body: null}).then(function(resultNoBody) {
                 t.equal(resultNoBody.statusCode, 400, 'did the put instance call with no body fail?');
                 callback();
             });
        },
        function (callback) {
+    	   // no organization_guid
            body.service_id = 'pagerduty';
-           putRequest(url, {header: header, body: JSON.stringify(body)})
-           .then(function(resultNoOrg) {
-                t.equal(resultNoOrg.statusCode, 400, 'did the put instance call with no service id fail?');
+           putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(resultNoOrg) {
+                t.equal(resultNoOrg.statusCode, 400, 'did the put instance call with no organization_guid fail?');
                 callback();
            });    	   
        }, 
        function (callback) {
+    	   // wrong api_key
            body.organization_guid = nconf.get('test_app_org_guid');
            body.parameters = getPostServiceInstanceParameters(pagerduty);
            body.parameters.api_key = "wrong" + body.parameters.api_key; 
-           putRequest(url, {header: header, body: JSON.stringify(body)})
-           .then(function(results) {
+           putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
                t.equal(results.statusCode, 400, 'did the put instance with wrong api_key failed?');
                callback();
            });    	   
        },
        function (callback) {
+    	   // wrong account_id
            body.parameters = getPostServiceInstanceParameters(pagerduty);
            body.parameters.account_id = "wrong" + body.parameters.account_id; 
-           putRequest(url, {header: header, body: JSON.stringify(body)})
-           .then(function(results) {
+           putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
                t.equal(results.statusCode, 400, 'did the put instance with wrong account_id failed?');
                callback();
            });    	   
        },
        function (callback) {
+    	   // wrong email
            body.parameters = getPostServiceInstanceParameters(pagerduty);
            body.parameters.user_email = "test@gmail"; 
-           putRequest(url, {header: header, body: JSON.stringify(body)})
-           .then(function(results) {
+           putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
                t.equal(results.statusCode, 400, 'did the put instance with wrong email failed?');
                callback();
            });    	   
        },
        function (callback) {
+    	   // wrong phone number
            body.parameters = getPostServiceInstanceParameters(pagerduty);
            body.parameters.user_phone = "0123"; 
-           putRequest(url, {header: header, body: JSON.stringify(body)})
-           .then(function(results) {
+           putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
                t.equal(results.statusCode, 400, 'did the put instance with wrong phone failed?');
                callback();
            });    	   
@@ -178,17 +182,16 @@ test('PagerDuty Broker - Test PUT instance with wrong parameters', function (t) 
 
 
 test('PagerDuty Broker - Test PUT instance', function (t) {
+	testNumber++;
     t.plan(22);
 
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
-
-    putRequest(url, {header: header, body: null})
+    putRequest(serviceInstanceUrl, {header: header, body: null})
         .then(function(resultNoBody) {
             t.equal(resultNoBody.statusCode, 400, 'did the put instance call with no body fail?');
             body.service_id = 'pagerduty';
 
-            putRequest(url, {header: header, body: JSON.stringify(body)})
+            putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
                 .then(function(resultNoOrg) {
                     t.equal(resultNoOrg.statusCode, 400, 'did the put instance call with no service id fail?');
                     body.organization_guid = nconf.get('test_app_org_guid');
@@ -197,13 +200,13 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
                     body.parameters.api_key = "wrong" + body.parameters.api_key; 
                     
                     //t.comment(pagerduty_service_name);
-                    putRequest(url, {header: header, body: JSON.stringify(body)})
+                    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
                     .then(function(results) {
                         t.equal(results.statusCode, 400, 'did the put instance with wrong api_key failed?');
                     	
                         body.parameters = getPostServiceInstanceParameters(pagerduty);
                     
-	                    putRequest(url, {header: header, body: JSON.stringify(body)})
+	                    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
 	                        .then(function(results) {
 	                            t.equal(results.statusCode, 200, 'did the put instance call succeed?');
 	                            t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
@@ -223,29 +226,28 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
 });
 
 test('PagerDuty Broker - Test PUT instance with names being prefix of existing ones', function (t) {
+	testNumber++;
     t.plan(20);
     
     var pagerduty2 = _.clone(pagerduty);
-    pagerduty2.service_name += " 2 Suffix";
-    pagerduty2.user_email = "user" + currentTime + "_2@ibm.com.suffix";
+    pagerduty2.service_name = getTestServiceName() + " Suffix";
+    pagerduty2.user_email = getTestUserEmail() + ".suffix";
 
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
     body.service_id = 'pagerduty';
     body.organization_guid = nconf.get('test_app_org_guid');
     body.parameters = getPostServiceInstanceParameters(pagerduty2);;
 
-    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 
         var pagerduty3 = _.clone(pagerduty);
-        pagerduty3.service_name += " 2";
-	    pagerduty3.user_email = "user" + currentTime + "_2@ibm.com";
+        pagerduty3.service_name = getTestServiceName();
+	    pagerduty3.user_email = getTestUserEmail();
 	
-	    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
 	    body.parameters = getPostServiceInstanceParameters(pagerduty3);;
 	
-	    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+	    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
 	        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
 	        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
 	        
@@ -262,32 +264,31 @@ test('PagerDuty Broker - Test PUT instance with names being prefix of existing o
 });
 
 test('PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', function (t) {
+	testNumber++;
     t.plan(6);
     
-    var pagerduty4 = _.clone(pagerduty);
-    pagerduty4.service_name = "(4) " + pagerduty.service_name;
-    pagerduty4.user_email = "user" + currentTime + "_4@ibm.com";
+    var pagerduty2 = _.clone(pagerduty);
+    pagerduty2.service_name = getTestServiceName();
+    pagerduty2.user_email = getTestUserEmail();
 
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
     body.service_id = 'pagerduty';
     body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty4);
+    body.parameters = getPostServiceInstanceParameters(pagerduty2);
 
-    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 
-        var pagerduty41 = {};
-        pagerduty41.service_name = pagerduty4.service_name;	
-	    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
-	    body.parameters = getPostServiceInstanceParameters(pagerduty41);;
+        var pagerduty3 = {};
+        pagerduty3.service_name = pagerduty2.service_name;	
+	    body.parameters = getPostServiceInstanceParameters(pagerduty3);;
 	
-	    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+	    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
 	        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
 	        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
 	        
 	        // Ensure PagerDuty service is reused
-	        assertService(pagerduty41, t, null);
+	        assertService(pagerduty3, t, null);
 	        
 	        // Ensure dashboard url is accessible
 	        var dashboardUrl = results.body.dashboard_url;
@@ -299,63 +300,66 @@ test('PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', 
 });
 
 test('PagerDuty Broker - Test PUT instance missing phone number', function (t) {
+	testNumber++;
     t.plan(12);
     
-    var pagerduty5 = _.clone(pagerduty);
-    pagerduty5.service_name = "(5) " + pagerduty.service_name;
-    pagerduty5.user_email = "user" + currentTime + "_5@ibm.com";
-    delete pagerduty5.user_phone_country;
-    delete pagerduty5.user_phone_number;
+    var pagerduty2 = _.clone(pagerduty);
+    pagerduty2.service_name = getTestServiceName();
+    pagerduty2.user_email = getTestUserEmail();
+    delete pagerduty2.user_phone_country;
+    delete pagerduty2.user_phone_number;
 
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId + '_5';
+    var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
     var body = {};
     body.service_id = 'pagerduty';
     body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty5);
+    body.parameters = getPostServiceInstanceParameters(pagerduty2);
     //t.comment(JSON.stringify(body.parameters));
 
-    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+    putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 200, 'did the put instance call succeed?');
         t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
         
         // Ensure PagerDuty service and user have been created
-        assertServiceAndUser(pagerduty5, t);
+        assertServiceAndUser(pagerduty2, t);
     });
 });
 
 test('PagerDuty Broker - Test PUT instance missing email', function (t) {
+	testNumber++;
     t.plan(1);
     
-    var pagerduty6 = _.clone(pagerduty);
-    pagerduty6.service_name = "(6) " + pagerduty.service_name;
-    delete pagerduty6.user_email;
+    var pagerduty2 = _.clone(pagerduty);
+    pagerduty2.service_name = getTestServiceName();
+    delete pagerduty2.user_email;
 
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId + '_6';
+    var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
     var body = {};
     body.service_id = 'pagerduty';
     body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty6);
+    body.parameters = getPostServiceInstanceParameters(pagerduty2);
     //t.comment(JSON.stringify(body.parameters));
 
-    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+    putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 400, 'did the put instance call fail with a bad request?');
     });
 });
 
 test('PagerDuty Broker - Test PATCH update instance with account_id and api_key', function (t) {
+	testNumber++;
     t.plan(4);
 	
-    var pagerduty6 = _.clone(pagerduty);
-    pagerduty6.service_name = "(6) " + pagerduty.service_name;
-    pagerduty6.user_email = "user" + currentTime + "_6@ibm.com";
+    var pagerduty2 = _.clone(pagerduty);
+    pagerduty2.service_name = getTestServiceName();
+    pagerduty2.user_email = getTestUserEmail();
 
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId + "_6";
+    var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
     var body = {};
     body.service_id = 'pagerduty';
     body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty6);
+    body.parameters = getPostServiceInstanceParameters(pagerduty2);
 
-    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+    putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
         
 	    var body = {};
@@ -366,7 +370,7 @@ test('PagerDuty Broker - Test PATCH update instance with account_id and api_key'
 	    	"api_key": pagerdutyApiKey2
 	    };
 	    
-	    patchRequest(url, {header: header, body: JSON.stringify(body)})
+	    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)})
 	        .then(function(resultFromPatch) {
 	            //t.comment(JSON.stringify(resultFromPatch));
 	            t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
@@ -378,31 +382,31 @@ test('PagerDuty Broker - Test PATCH update instance with account_id and api_key'
 });
 
 test('PagerDuty Broker - Test PATCH wrong api_key', function (t) {
+	testNumber++;
     t.plan(1);
 	
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
     body.parameters = {
     	"api_key": "wrong"
     };
     
-    patchRequest(url, {header: header, body: JSON.stringify(body)})
+    patchRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
         .then(function(resultFromPatch) {
             t.equal(resultFromPatch.statusCode, 400, 'did the patch instance call with wrong api_key failed?');
     });    				
 });
 
 test('PagerDuty Broker - Test PATCH with invalid account_id', function (t) {
+	testNumber++;
     t.plan(2);
 	
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
     var newAccountId = "http://ibm.com";
     body.parameters = {
     	"account_id": newAccountId
     };
     
-    patchRequest(url, {header: header, body: JSON.stringify(body)})
+    patchRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
         .then(function(resultFromPatch) {
             t.equal(resultFromPatch.statusCode, 400, 'did the patch instance call return a bad request?');
             t.equal(resultFromPatch.body.description, "Invalid account_id: " + newAccountId, 'is the bad request message correct?');
@@ -411,9 +415,9 @@ test('PagerDuty Broker - Test PATCH with invalid account_id', function (t) {
 
 
 test('PagerDuty Broker - Test PATCH update service_name', function (t) {
+	testNumber++;
     t.plan(2);
 	
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
     var newServiceName = "(Updated) " + pagerduty.service_name;
     pagerduty.service_name = newServiceName; //update for next tests
@@ -421,7 +425,7 @@ test('PagerDuty Broker - Test PATCH update service_name', function (t) {
     	"service_name": newServiceName
     };
     
-    patchRequest(url, {header: header, body: JSON.stringify(body)})
+    patchRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
         .then(function(resultFromPatch) {
             t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
             t.equal(resultFromPatch.body.parameters.service_name, newServiceName, 'did the put instance call return the right service name?');
@@ -430,9 +434,9 @@ test('PagerDuty Broker - Test PATCH update service_name', function (t) {
 });
 
 test('PagerDuty Broker - Test PATCH update user_email', function (t) {
+	testNumber++;
     t.plan(18);
 	
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
     var newEmail = "user" + currentTime + ".updated@ibm.com";
     pagerduty.user_email = newEmail; //update for next tests
@@ -440,7 +444,7 @@ test('PagerDuty Broker - Test PATCH update user_email', function (t) {
     	"user_email": newEmail
     };
     
-    patchRequest(url, {header: header, body: JSON.stringify(body)})
+    patchRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
         .then(function(resultFromPatch) {
             t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
             t.equal(resultFromPatch.body.parameters.user_email, newEmail, 'did the put instance call return the right email?');
@@ -452,9 +456,9 @@ test('PagerDuty Broker - Test PATCH update user_email', function (t) {
 });
 
 test('PagerDuty Broker - Test PATCH update user_phone', function (t) {
+	testNumber++;
     t.plan(34);
 	
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
     var newUserPhoneNumber = "987654321"
     var newPhone = "+" + pagerduty.user_phone_country + " " + newUserPhoneNumber;
@@ -462,7 +466,7 @@ test('PagerDuty Broker - Test PATCH update user_phone', function (t) {
     	"user_phone": newPhone
     };
     
-    patchRequest(url, {header: header, body: JSON.stringify(body)})
+    patchRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
         .then(function(resultFromPatch) {
             t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
             t.equal(resultFromPatch.body.parameters.user_phone, newPhone, 'did the put instance call return the right phone?');
@@ -477,10 +481,11 @@ test('PagerDuty Broker - Test PATCH update user_phone', function (t) {
 
 // Bind tests
 test('PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
+	testNumber++;
     t.plan(2);
 
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId + '/toolchains/'+ mockToolchainId;
-    putRequest(url, {header: header})
+    var toolchainUrl = serviceInstanceUrl + '/toolchains/'+ mockToolchainId;
+    putRequest(toolchainUrl, {header: header})
         .then(function(resultsFromBind) {
             t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
             //t.comment(JSON.stringify(resultsFromBind));
@@ -495,6 +500,7 @@ test('PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
 
 // Events tests
 test('PagerDuty Broker - Test Messaging Store Like Event - AD start failed', function (t) {
+	testNumber++;
 	t.plan(1);
 	
 	// Message Store Event endpoint
@@ -513,6 +519,7 @@ test('PagerDuty Broker - Test Messaging Store Like Event - AD start failed', fun
 });
 
 test('PagerDuty Broker - Test Messaging Store Like Event - AD finish failed', function (t) {
+	testNumber++;
 	t.plan(1);
 	
 	// Message Store Event endpoint
@@ -531,6 +538,7 @@ test('PagerDuty Broker - Test Messaging Store Like Event - AD finish failed', fu
 });
 
 test('PagerDuty Broker - Test Messaging Store Like Event - Unknown service_id', function (t) {
+	testNumber++;
 	t.plan(1);
 	
 	// Message Store Event endpoint
@@ -550,6 +558,7 @@ test('PagerDuty Broker - Test Messaging Store Like Event - Unknown service_id', 
 });
 
 test('PagerDuty Broker - Test Toolchain Lifecycle Like Event', function (t) {
+	testNumber++;
 	t.plan(1);
 	
 	var lifecycle_event = {"description" : "this a toolchain lifecycle event"};
@@ -563,22 +572,22 @@ test('PagerDuty Broker - Test Toolchain Lifecycle Like Event', function (t) {
 
 //Delete tests
 test('PagerDuty Broker - Test DELETE instance w/ other org', function (t) {
+	testNumber++;
     t.plan(1);
     var otherAuth = {
         'Authorization': authenticationTokens[1]
     };
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
-    delRequest(url, {header: otherAuth})
+    delRequest(serviceInstanceUrl, {header: otherAuth})
         .then(function(resultsFromDel) {
             t.equal(resultsFromDel.statusCode, 403, 'did the instance with other org fail to delete?');
     });
 });
 
 test('PagerDuty Broker - Test DELETE instance', function (t) {
+	testNumber++;
     t.plan(1);
 
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
-    delRequest(url, {header: header})
+    delRequest(serviceInstanceUrl, {header: header})
         .then(function(resultsFromDel) {
             t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
     });
@@ -586,29 +595,29 @@ test('PagerDuty Broker - Test DELETE instance', function (t) {
 
 // Unbind tests, the service instance will still remain in the DB
 test('PagerDuty Broker - Test DELETE unbind instance from toolchain w/ other org', function (t) {
+	testNumber++;
     t.plan(5);
 
     var otherAuth = {
         'Authorization': authenticationTokens[1]
     };
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
     body.service_id = 'pagerduty';
     body.organization_guid = nconf.get('test_app_org_guid');
     body.parameters = getPostServiceInstanceParameters(pagerduty);
-    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
             t.equal(results.statusCode, 200, 'did the put instance call succeed?');
             t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
 
-            putRequest(url + '/toolchains/'+ mockToolchainId, {header: header})
+            putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header})
                 .then(function(resultsFromBind) {
                     t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
 
-                    delRequest(url + '/toolchains/'+ mockToolchainId, {header: otherAuth})
+                    delRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: otherAuth})
                         .then(function(resultsFromDel) {
                             t.equal(resultsFromDel.statusCode, 403, 'did the unbind instance call with other org fail?');
 
-                            delRequest(url, {header: header})
+                            delRequest(serviceInstanceUrl, {header: header})
                                 .then(function(resultsFromDel) {
                                     t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
                             });
@@ -619,27 +628,27 @@ test('PagerDuty Broker - Test DELETE unbind instance from toolchain w/ other org
 
 
 test('PagerDuty Broker - Test DELETE unbind instance from toolchain', function (t) {
+	testNumber++;
     t.plan(5);
 
-    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
     var body = {};
     body.service_id = 'pagerduty';
     body.organization_guid = nconf.get('test_app_org_guid');
     body.parameters = getPostServiceInstanceParameters(pagerduty);
-    putRequest(url, {header: header, body: JSON.stringify(body)})
+    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
         .then(function(resultFromPut) {
             t.equal(resultFromPut.statusCode, 200, 'did the put instance call succeed?');
             t.ok(resultFromPut.body.instance_id, 'did the put instance call return an instance_id?');
 
-            putRequest(url + '/toolchains/'+ mockToolchainId, {header: header})
+            putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header})
                 .then(function(resultsFromBind) {
                     t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
 
-                    delRequest(url + '/toolchains/'+ mockToolchainId, {header: header})
+                    delRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header})
                         .then(function(resultsFromDel) {
                             t.equal(resultsFromDel.statusCode, 204, 'did the unbind instance call succeed?');
 
-                            delRequest(url, {header: header})
+                            delRequest(serviceInstanceUrl, {header: header})
                                 .then(function(resultsFromDel) {
                                     t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
                             });
@@ -650,6 +659,7 @@ test('PagerDuty Broker - Test DELETE unbind instance from toolchain', function (
 
 //Monitoring endpoints
 test('PagerDuty Broker - Test GET status', function (t) {
+	testNumber++;
     t.plan(1);
 
     var url = nconf.get('url') + '/status';
@@ -659,6 +669,7 @@ test('PagerDuty Broker - Test GET status', function (t) {
 });
 
 test('PagerDuty Broker - Test GET version', function (t) {
+	testNumber++;
     t.plan(1);
 
     var url = nconf.get('url') + '/version';
@@ -764,6 +775,13 @@ function assertServiceAndUser(pagerduty, t) {
 	});
 }
 
+function getTestUserEmail() {
+	return "user" + currentTime + "_" + testNumber + "@ibm.com";
+}
+
+function getTestServiceName() {
+	return "(" + testNumber + ") " + pagerduty.service_name;
+}
 
 function getPostServiceInstanceParameters(pagerduty) {
 	var user_phone;
