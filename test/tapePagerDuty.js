@@ -475,6 +475,7 @@ test('PagerDuty Broker - Test PATCH update user_phone', function (t) {
 	});    				
 });
 
+// Bind tests
 test('PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
     t.plan(2);
 
@@ -492,6 +493,7 @@ test('PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
     });
 });
 
+// Events tests
 test('PagerDuty Broker - Test Messaging Store Like Event - AD start failed', function (t) {
 	t.plan(1);
 	
@@ -559,6 +561,92 @@ test('PagerDuty Broker - Test Toolchain Lifecycle Like Event', function (t) {
 	
 });
 
+//Delete tests
+test('PagerDuty Broker - Test DELETE instance w/ other org', function (t) {
+    t.plan(1);
+    var otherAuth = {
+        'Authorization': authenticationTokens[1]
+    };
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    delRequest(url, {header: otherAuth})
+        .then(function(resultsFromDel) {
+            t.equal(resultsFromDel.statusCode, 403, 'did the instance with other org fail to delete?');
+    });
+});
+
+test('PagerDuty Broker - Test DELETE instance', function (t) {
+    t.plan(1);
+
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    delRequest(url, {header: header})
+        .then(function(resultsFromDel) {
+            t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
+    });
+});
+
+// Unbind tests, the service instance will still remain in the DB
+test('PagerDuty Broker - Test DELETE unbind instance from toolchain w/ other org', function (t) {
+    t.plan(5);
+
+    var otherAuth = {
+        'Authorization': authenticationTokens[1]
+    };
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+    body.service_id = 'pagerduty';
+    body.organization_guid = nconf.get('test_app_org_guid');
+    body.parameters = getPostServiceInstanceParameters(pagerduty);
+    putRequest(url, {header: header, body: JSON.stringify(body)}).then(function(results) {
+            t.equal(results.statusCode, 200, 'did the put instance call succeed?');
+            t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+
+            putRequest(url + '/toolchains/'+ mockToolchainId, {header: header})
+                .then(function(resultsFromBind) {
+                    t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
+
+                    delRequest(url + '/toolchains/'+ mockToolchainId, {header: otherAuth})
+                        .then(function(resultsFromDel) {
+                            t.equal(resultsFromDel.statusCode, 403, 'did the unbind instance call with other org fail?');
+
+                            delRequest(url, {header: header})
+                                .then(function(resultsFromDel) {
+                                    t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
+                            });
+                    });
+            });
+    });
+});
+
+
+test('PagerDuty Broker - Test DELETE unbind instance from toolchain', function (t) {
+    t.plan(5);
+
+    var url = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/' + mockServiceInstanceId;
+    var body = {};
+    body.service_id = 'pagerduty';
+    body.organization_guid = nconf.get('test_app_org_guid');
+    body.parameters = getPostServiceInstanceParameters(pagerduty);
+    putRequest(url, {header: header, body: JSON.stringify(body)})
+        .then(function(resultFromPut) {
+            t.equal(resultFromPut.statusCode, 200, 'did the put instance call succeed?');
+            t.ok(resultFromPut.body.instance_id, 'did the put instance call return an instance_id?');
+
+            putRequest(url + '/toolchains/'+ mockToolchainId, {header: header})
+                .then(function(resultsFromBind) {
+                    t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
+
+                    delRequest(url + '/toolchains/'+ mockToolchainId, {header: header})
+                        .then(function(resultsFromDel) {
+                            t.equal(resultsFromDel.statusCode, 204, 'did the unbind instance call succeed?');
+
+                            delRequest(url, {header: header})
+                                .then(function(resultsFromDel) {
+                                    t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
+                            });
+                    });
+            });
+    });
+});
 
 //Monitoring endpoints
 test('PagerDuty Broker - Test GET status', function (t) {
