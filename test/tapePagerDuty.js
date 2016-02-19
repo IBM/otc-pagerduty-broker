@@ -328,34 +328,47 @@ test(++testNumber + ' PagerDuty Broker - Test PUT instance missing email', funct
 
 // Patch tests
 test(++testNumber + ' PagerDuty Broker - Test PATCH update instance with account_id and api_key', function (t) {
-    t.plan(4);
+    t.plan(20);
 	
     var pagerduty2 = _.clone(pagerduty);
     pagerduty2.service_name = getTestServiceName();
     pagerduty2.user_email = getTestUserEmail();
-
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
-    var body = getNewInstanceBody(pagerduty2);
-    putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
-        t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
-        
-	    var body = {};
-	    var pagerdutyAccountId2 = nconf.get("pagerduty-account-2");
-	    var pagerdutyApiKey2 = nconf.get("pagerduty-api-key-2");
-	    body.parameters = {
-	    	"account_id": pagerdutyAccountId2,
-	    	"api_key": pagerdutyApiKey2
-	    };
-	    
-	    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)})
-	        .then(function(resultFromPatch) {
-	            //t.comment(JSON.stringify(resultFromPatch));
-	            t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
+ 	async.series([
+		function(callback) {
+			// create service instance
+   			var body = getNewInstanceBody(pagerduty2);
+			putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
+        		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
+				callback();
+			});
+		},
+		function(callback) {
+			// patch account_id and api_key
+		    var body = {};
+		    var pagerdutyAccountId2 = nconf.get("pagerduty-account-2");
+		    var pagerdutyApiKey2 = nconf.get("pagerduty-api-key-2");
+		    body.parameters = {
+		    	"account_id": pagerdutyAccountId2,
+		    	"api_key": pagerdutyApiKey2
+		    };
+		    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(resultFromPatch) {
+		        t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
 	            t.equal(resultFromPatch.body.parameters.account_id, pagerdutyAccountId2, 'did the put instance call return the right account id?');
 	            t.equal(resultFromPatch.body.parameters.api_key, pagerdutyApiKey2, 'did the put instance call return the right API key?');
-	            // TODO: check that the service is created on new account
-	    });   
-    });
+		        // check that the service is created on new account
+		        pagerduty2.account_id = pagerdutyAccountId2;
+		        pagerduty2.api_key = pagerdutyApiKey2;
+		        var apiUrl2 = "https://" + pagerdutyAccountId2 + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
+		        assertServiceAndUserOnAccount(apiUrl2, pagerdutyApiKey2, pagerduty2, t);
+		        callback();
+		    });    
+		}
+	], function(err, results) {
+		if (err) {
+			t.fail(err);
+		}
+	});
 });
 
 test(++testNumber + ' PagerDuty Broker - Test PATCH wrong api_key', function (t) {
@@ -703,10 +716,14 @@ function assertDashboardAccessible(body, t) {
 }
 
 function assertService(pagerduty, t, callback) {
+	return assertServiceOnAccount(pagerdutyApiUrl, pagerdutyApiKey, pagerduty, t, callback);
+}
+
+function assertServiceOnAccount(apiUrl, apiKey, pagerduty, t, callback) {
 	var pagerdutyHeaders = {
-		'Authorization': 'Token token=' + pagerdutyApiKey
+		'Authorization': 'Token token=' + apiKey
 	};
-	var url = pagerdutyApiUrl + "/services?query=" + encodeURIComponent(pagerduty.service_name) + "&include[]=escalation_policy";
+	var url = apiUrl + "/services?query=" + encodeURIComponent(pagerduty.service_name) + "&include[]=escalation_policy";
 	request.get({
 		uri: url,
 		json: true,
@@ -722,13 +739,18 @@ function assertService(pagerduty, t, callback) {
 	});
 }
 
+
 // plan == 15 (or 10 for no phone number case)
 function assertServiceAndUser(pagerduty, t) {
-	assertService(pagerduty, t, function(pagerduty, t, pagerdutyHeaders, service) {
+	return assertServiceAndUserOnAccount(pagerdutyApiUrl, pagerdutyApiKey, pagerduty, t);
+}
+
+function assertServiceAndUserOnAccount(apiUrl, apiKey, pagerduty, t) {
+	assertServiceOnAccount(apiUrl, apiKey, pagerduty, t, function(pagerduty, t, pagerdutyHeaders, service) {
         var escalation_policy = service.escalation_policy;
         var userName = "Primary contact (" + pagerduty.user_email + ")";
         t.equal(escalation_policy.name, "Policy for " + pagerduty.service_name, 'was the right escalation policy created?');
-        var escalation_policy_url = pagerdutyApiUrl + "/escalation_policies/" + escalation_policy.id;
+        var escalation_policy_url = apiUrl + "/escalation_policies/" + escalation_policy.id;
     	request.get({
     		uri: escalation_policy_url,
     		json: true,
@@ -741,7 +763,7 @@ function assertServiceAndUser(pagerduty, t) {
 			var target = escalation_rule.targets[0];
 			t.equal(target.name, userName, 'was the correct user name used?');
 			t.equal(target.email, pagerduty.user_email, 'was the correct user email used?');
-			var contact_method_url = pagerdutyApiUrl + "/users/" + target.id + "/contact_methods";
+			var contact_method_url = apiUrl + "/users/" + target.id + "/contact_methods";
 			request.get({
 				uri: contact_method_url,
 				json: true,
@@ -757,7 +779,7 @@ function assertServiceAndUser(pagerduty, t) {
 				t.ok(sms_contact_method, 'was the SMS contact method found (+' + pagerduty.user_phone_country + ' ' + pagerduty.user_phone_number + ')?');
 				
 				// Check the notification rules for SMS and Phone
-				var notification_rules_url = pagerdutyApiUrl + "/users/" + target.id + "/notification_rules";
+				var notification_rules_url = apiUrl + "/users/" + target.id + "/notification_rules";
 				request.get({
 					uri: notification_rules_url,
 					json: true,
