@@ -357,8 +357,6 @@ test(++testNumber + ' PagerDuty Broker - Test PATCH update instance with account
 	            t.equal(resultFromPatch.body.parameters.account_id, pagerdutyAccountId2, 'did the put instance call return the right account id?');
 	            t.equal(resultFromPatch.body.parameters.api_key, pagerdutyApiKey2, 'did the put instance call return the right API key?');
 		        // check that the service is created on new account
-		        pagerduty2.account_id = pagerdutyAccountId2;
-		        pagerduty2.api_key = pagerdutyApiKey2;
 		        var apiUrl2 = "https://" + pagerdutyAccountId2 + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
 		        assertServiceAndUserOnAccount(apiUrl2, pagerdutyApiKey2, pagerduty2, t);
 		        callback();
@@ -601,7 +599,7 @@ test(++testNumber + ' PagerDuty Broker - Test Toolchain Lifecycle Like Event', f
 	
 });
 
-//Delete tests
+// Delete tests
 test(++testNumber + ' PagerDuty Broker - Test DELETE instance w/ other org', function (t) {
     t.plan(1);
     var otherAuth = {
@@ -620,60 +618,91 @@ test(++testNumber + ' PagerDuty Broker - Test DELETE instance', function (t) {
     });
 });
 
-// Unbind tests, the service instance will still remain in the DB
+// Unbind test with wrong org then correct org, the service instance will still remain in the DB
 test(++testNumber + ' PagerDuty Broker - Test DELETE unbind instance from toolchain w/ other org', function (t) {
     t.plan(5);
 
-    var otherAuth = {
-        'Authorization': authenticationTokens[1]
-    };
-    var body = getNewInstanceBody(pagerduty);
-    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
-        t.equal(results.statusCode, 200, 'did the put instance call succeed?');
-        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
-
-        putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header})
-            .then(function(resultsFromBind) {
+	async.series([
+		function(callback) {
+			// create service instance
+   			var body = getNewInstanceBody(pagerduty);
+			putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
+		        t.equal(results.statusCode, 200, 'did the put instance call succeed?');
+		        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+				callback();
+			});
+		},
+		function(callback) {
+			// bind service instance to toolchain
+		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header}).then(function(resultsFromBind) {
                 t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
-
-                delRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: otherAuth})
-                    .then(function(resultsFromDel) {
-                        t.equal(resultsFromDel.statusCode, 403, 'did the unbind instance call with other org fail?');
-
-                        delRequest(serviceInstanceUrl, {header: header})
-                            .then(function(resultsFromDel) {
-                                t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
-                        });
-                });
-        });
-    });
+		        callback();
+		    });    
+		},
+		function(callback) {
+			// attempt unbind service instance from toolchain with wrong org
+		    var otherAuth = {
+		        'Authorization': authenticationTokens[1]
+		    };
+		    delRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: otherAuth}).then(function(resultsFromDel) {
+				t.equal(resultsFromDel.statusCode, 403, 'did the unbind instance call with other org fail?');
+		        callback();
+		    });    
+		},
+		function(callback) {
+			// unbind service instance from toolchain with correct org
+		    delRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header}).then(function(resultsFromDel) {
+				t.equal(resultsFromDel.statusCode, 204, 'did the unbind instance call succeed?');
+		        callback();
+		    });    
+		}
+	], function(err, results) {
+		if (err) {
+			t.fail(err);
+		}
+	});
 });
 
-
-test(++testNumber + ' PagerDuty Broker - Test DELETE unbind instance from toolchain', function (t) {
+// Unbind and delete test
+test(++testNumber + ' PagerDuty Broker - Test DELETE unbind instance from toolchain and delete it', function (t) {
     t.plan(5);
 
-    var body = getNewInstanceBody(pagerduty);
-    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
-        .then(function(resultFromPut) {
-            t.equal(resultFromPut.statusCode, 200, 'did the put instance call succeed?');
-            t.ok(resultFromPut.body.instance_id, 'did the put instance call return an instance_id?');
-
-            putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header})
-                .then(function(resultsFromBind) {
-                    t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
-
-                    delRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header})
-                        .then(function(resultsFromDel) {
-                            t.equal(resultsFromDel.statusCode, 204, 'did the unbind instance call succeed?');
-
-                            delRequest(serviceInstanceUrl, {header: header})
-                                .then(function(resultsFromDel) {
-                                    t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
-                            });
-                    });
-            });
-    });
+	async.series([
+		function(callback) {
+			// create service instance
+   			var body = getNewInstanceBody(pagerduty);
+			putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
+		        t.equal(results.statusCode, 200, 'did the put instance call succeed?');
+		        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+				callback();
+			});
+		},
+		function(callback) {
+			// bind service instance to toolchain
+		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header}).then(function(resultsFromBind) {
+                t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
+		        callback();
+		    });    
+		},
+		function(callback) {
+			// unbind service instance from toolchain
+		    delRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header}).then(function(resultsFromDel) {
+				t.equal(resultsFromDel.statusCode, 204, 'did the unbind instance call succeed?');
+		        callback();
+		    });    
+		},
+		function(callback) {
+			// delete service instance
+		     delRequest(serviceInstanceUrl, {header: header}).then(function(resultsFromDel) {
+				t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
+		        callback();
+		    });    
+		}
+	], function(err, results) {
+		if (err) {
+			t.fail(err);
+		}
+	});
 });
 
 //Monitoring endpoints
