@@ -215,10 +215,7 @@ test('PagerDuty Broker - Test PUT instance', function (t) {
         assertServiceAndUser(pagerduty, t);
         
         // Ensure dashboard url is accessible
-        var dashboardUrl = results.body.dashboard_url;
-        getRequest(dashboardUrl, {}) .then(function(getResults) {
-            t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
-        });
+        assertDashboardAccessible(results.body, t);
     });
 });
 
@@ -256,11 +253,9 @@ test('PagerDuty Broker - Test PUT instance with names being prefix of existing o
 		        assertServiceAndUser(pagerduty3, t);
 		        
 		        // Ensure dashboard url is accessible
-		        var dashboardUrl = results.body.dashboard_url;
-		        getRequest(dashboardUrl, {}).then(function(getResults) {
-		            t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
-					callback();
-		        });
+		        assertDashboardAccessible(results.body, t);
+		        
+				callback();
 			});
 		}
 	], function(err, results) {
@@ -303,11 +298,9 @@ test('PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', 
 		        assertService(pagerduty3, t, null);
 		        
 		        // Ensure dashboard url is accessible
-		        var dashboardUrl = results.body.dashboard_url;
-		        getRequest(dashboardUrl, {}) .then(function(getResults) {
-		            t.notEqual(getResults.statusCode, 404, 'did the get dashboard url call succeed?');
-		            callback();
-		        });
+		        assertDashboardAccessible(results.body, t);
+		         
+		        callback();
 			});
 		}
 	], function(err, results) {
@@ -705,6 +698,18 @@ test('PagerDuty Broker - Test GET version', function (t) {
 });
 
 // Utility functions
+
+function assertDashboardAccessible(body, t) {
+	var dashboardUrl = body.dashboard_url;
+	request.get({
+		uri: dashboardUrl,
+		json: true,
+		headers: {}
+	}, function(err, reqRes, body) {
+		t.notEqual(reqRes.statusCode, 404, 'did the get dashboard url call succeed?');
+		return;
+	});
+}
 
 function assertService(pagerduty, t, callback) {
 	var pagerdutyHeaders = {
