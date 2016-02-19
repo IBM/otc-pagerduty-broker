@@ -198,11 +198,7 @@ test(++testNumber + ' PagerDuty Broker - Test PUT instance with wrong parameters
 test(++testNumber + ' PagerDuty Broker - Test PUT instance', function (t) {
     t.plan(19);
 
-    var body = {};
-    body.service_id = 'pagerduty';
-    body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty);
-    
+    var body = getNewInstanceBody(pagerduty);
     putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 200, 'did the put instance call succeed?');
         t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
@@ -218,17 +214,13 @@ test(++testNumber + ' PagerDuty Broker - Test PUT instance', function (t) {
 test(++testNumber + ' PagerDuty Broker - Test PUT instance with names being prefix of existing ones', function (t) {
     t.plan(20);
     
-    var body = {};
-    body.service_id = 'pagerduty';
-    body.organization_guid = nconf.get('test_app_org_guid');
-
 	async.series([
 		function(callback) {
 			// instance with suffix names
 		    var pagerduty2 = _.clone(pagerduty);
 		    pagerduty2.service_name = getTestServiceName() + " Suffix";
 		    pagerduty2.user_email = getTestUserEmail() + ".suffix";
-    		body.parameters = getPostServiceInstanceParameters(pagerduty2);;
+    		var body = getNewInstanceBody(pagerduty2);
 			putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -239,7 +231,7 @@ test(++testNumber + ' PagerDuty Broker - Test PUT instance with names being pref
 			var pagerduty3 = _.clone(pagerduty);
 	        pagerduty3.service_name = getTestServiceName();
 		    pagerduty3.user_email = getTestUserEmail();
-		    body.parameters = getPostServiceInstanceParameters(pagerduty3);;
+		    var body = getNewInstanceBody(pagerduty3);
 		    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
 		        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
 		        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
@@ -263,17 +255,13 @@ test(++testNumber + ' PagerDuty Broker - Test PUT instance with names being pref
 test(++testNumber + ' PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', function (t) {
     t.plan(6);
     
-    var body = {};
-    body.service_id = 'pagerduty';
-    body.organization_guid = nconf.get('test_app_org_guid');
-
     var pagerduty2 = _.clone(pagerduty);
     pagerduty2.service_name = getTestServiceName();
     pagerduty2.user_email = getTestUserEmail();
 	async.series([
 		function(callback) {
 			// first instance
-    		body.parameters = getPostServiceInstanceParameters(pagerduty2);;
+    		var body = getNewInstanceBody(pagerduty2);
 			putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -283,7 +271,7 @@ test(++testNumber + ' PagerDuty Broker - Test PUT instance reusing existing Page
 			// second instance reuse service of first instance
 	        var pagerduty3 = {};
 	        pagerduty3.service_name = pagerduty2.service_name;	
-		    body.parameters = getPostServiceInstanceParameters(pagerduty3);;
+		    var body = getNewInstanceBody(pagerduty3);
 		    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
 		        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
 		        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
@@ -314,12 +302,7 @@ test(++testNumber + ' PagerDuty Broker - Test PUT instance missing phone number'
     delete pagerduty2.user_phone_number;
 
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
-    var body = {};
-    body.service_id = 'pagerduty';
-    body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty2);
-    //t.comment(JSON.stringify(body.parameters));
-
+	var body = getNewInstanceBody(pagerduty2);
     putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 200, 'did the put instance call succeed?');
         t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
@@ -337,12 +320,7 @@ test(++testNumber + ' PagerDuty Broker - Test PUT instance missing email', funct
     delete pagerduty2.user_email;
 
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
-    var body = {};
-    body.service_id = 'pagerduty';
-    body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty2);
-    //t.comment(JSON.stringify(body.parameters));
-
+    var body = getNewInstanceBody(pagerduty2);
     putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 400, 'did the put instance call fail with a bad request?');
     });
@@ -357,11 +335,7 @@ test(++testNumber + ' PagerDuty Broker - Test PATCH update instance with account
     pagerduty2.user_email = getTestUserEmail();
 
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
-    var body = {};
-    body.service_id = 'pagerduty';
-    body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty2);
-
+    var body = getNewInstanceBody(pagerduty2);
     putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
         
@@ -423,10 +397,7 @@ test(++testNumber + ' PagerDuty Broker - Test PATCH update service_name', functi
 	async.series([
 		function(callback) {
 			// create service instance
-   			var body = {};
-		    body.service_id = 'pagerduty';
-  			body.organization_guid = nconf.get('test_app_org_guid');
-    		body.parameters = getPostServiceInstanceParameters(pagerduty2);;
+   			var body = getNewInstanceBody(pagerduty2);
 			putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -465,10 +436,7 @@ test(++testNumber + ' PagerDuty Broker - Test PATCH update user_email', function
 	async.series([
 		function(callback) {
 			// create service instance
-   			var body = {};
-		    body.service_id = 'pagerduty';
-  			body.organization_guid = nconf.get('test_app_org_guid');
-    		body.parameters = getPostServiceInstanceParameters(pagerduty2);;
+   			var body = getNewInstanceBody(pagerduty2);
 			putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -507,10 +475,7 @@ test(++testNumber + ' PagerDuty Broker - Test PATCH update user_phone', function
 	async.series([
 		function(callback) {
 			// create service instance
-   			var body = {};
-		    body.service_id = 'pagerduty';
-  			body.organization_guid = nconf.get('test_app_org_guid');
-    		body.parameters = getPostServiceInstanceParameters(pagerduty2);;
+   			var body = getNewInstanceBody(pagerduty2);
 			putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -649,10 +614,7 @@ test(++testNumber + ' PagerDuty Broker - Test DELETE unbind instance from toolch
     var otherAuth = {
         'Authorization': authenticationTokens[1]
     };
-    var body = {};
-    body.service_id = 'pagerduty';
-    body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty);
+    var body = getNewInstanceBody(pagerduty);
     putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 200, 'did the put instance call succeed?');
         t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
@@ -678,10 +640,7 @@ test(++testNumber + ' PagerDuty Broker - Test DELETE unbind instance from toolch
 test(++testNumber + ' PagerDuty Broker - Test DELETE unbind instance from toolchain', function (t) {
     t.plan(5);
 
-    var body = {};
-    body.service_id = 'pagerduty';
-    body.organization_guid = nconf.get('test_app_org_guid');
-    body.parameters = getPostServiceInstanceParameters(pagerduty);
+    var body = getNewInstanceBody(pagerduty);
     putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)})
         .then(function(resultFromPut) {
             t.equal(resultFromPut.statusCode, 200, 'did the put instance call succeed?');
@@ -718,15 +677,14 @@ test(++testNumber + ' PagerDuty Broker - Test GET version', function (t) {
     t.plan(1);
 
     var url = nconf.get('url') + '/version';
-    getRequest(url, {header: null})
-        .then(function(results) {
-            // Try to get the build number from the pipeline environment variables, otherwise the value is undefined.
-            var buildID = process.env.BUILD_NUMBER;
-            if(buildID) {
-                t.equal(JSON.parse(results.body).build, buildID, 'did the get version call succeed?');
-            } else {
-                t.equal(results.statusCode, 200, 'did the get version call succeed?');
-            }
+    getRequest(url, {header: null}).then(function(results) {
+        // Try to get the build number from the pipeline environment variables, otherwise the value is undefined.
+        var buildID = process.env.BUILD_NUMBER;
+        if(buildID) {
+            t.equal(JSON.parse(results.body).build, buildID, 'did the get version call succeed?');
+        } else {
+            t.equal(results.statusCode, 200, 'did the get version call succeed?');
+        }
     });
 });
 
@@ -830,6 +788,14 @@ function assertServiceAndUser(pagerduty, t) {
     	});
         
 	});
+}
+
+function getNewInstanceBody(pagerduty) {
+	var body = {};
+    body.service_id = 'pagerduty';
+    body.organization_guid = nconf.get('test_app_org_guid');
+    body.parameters = getPostServiceInstanceParameters(pagerduty);
+	return body;
 }
 
 function getTestUserEmail() {
