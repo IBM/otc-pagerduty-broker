@@ -13,7 +13,7 @@ var nconf = require('nconf'),
     request = require("request"),
     async = require("async"),
     tiamUtils = require('./tiamTestUtils.js'),
-    test = require('tape'),
+    test = require('tape-catch'),
     _ = require('underscore')
 ;
 

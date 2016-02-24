@@ -19,7 +19,8 @@
 		"q": "*",
 		"tap-spec": "^3.0.0",
 		"tap-xunit": "^1.1.1",
-		"tape": "^4.0.0"
+		"tape": "^4.0.0",
+		"tape-catch": "*"
 	},
 	"scripts": {
 		"start": "node index",
