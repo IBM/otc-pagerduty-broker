@@ -61,11 +61,31 @@ var pagerdutyApiUrl = "https://" + pagerdutyAccountId + '.' + nconf.get("service
 var testId = 0;
 var testNumber = 0; // cannot use the same var as testId is incremented when the tests are read by tape, not when they are executed
 
-test(++testId + ' PagerDuty Broker - Test Setup', function (t) {
-	testNumber++;
-    mockUserArray = nconf.get('userArray');
+function setup(t) {
+    testNumber++;
+}
 
-    t.plan(mockUserArray.length * 2);
+function teardown(t) {
+	// TODO: delete service instance as well as PagerDuty service created during the test
+}
+
+function test_(name, testCode) {
+	test('Setup', function(t) {
+    	setup(t);
+    	t.end();
+	});
+	test(name, function(t) {
+		testCode(t);
+	});
+	test('Teardown', function(t) {
+		teardown(t);
+		t.end();
+	});
+}
+
+test_(++testId + ' PagerDuty Broker - Test Setup', function (t) {
+	mockUserArray = nconf.get('userArray');
+	t.plan(mockUserArray.length * 2);
 
     for(var i = 0; i < mockUserArray.length; i++) (function(i) {
         tiamUtils.authenticateTestUserWithTIAM (function(accessToken) {
@@ -81,9 +101,9 @@ test(++testId + ' PagerDuty Broker - Test Setup', function (t) {
     } (i));
 });
 
+
 //Authentication testing
-test(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
     t.plan(4);
 
     var body = {
@@ -132,8 +152,7 @@ test(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
 	});
 });
 
-test(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', function (t) {
     t.plan(6);
 
     var body = {};
@@ -199,8 +218,7 @@ test(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', f
 });
 
 
-test(++testId + ' PagerDuty Broker - Test PUT instance', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PUT instance', function (t) {
     t.plan(19);
 
     var body = getNewInstanceBody(pagerduty);
@@ -216,8 +234,7 @@ test(++testId + ' PagerDuty Broker - Test PUT instance', function (t) {
     });
 });
 
-test(++testId + ' PagerDuty Broker - Test PUT instance with names being prefix of existing ones', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PUT instance with names being prefix of existing ones', function (t) {
     t.plan(20);
     
 	async.series([
@@ -258,8 +275,7 @@ test(++testId + ' PagerDuty Broker - Test PUT instance with names being prefix o
 	});
 });
 
-test(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', function (t) {
     t.plan(6);
     
     var pagerduty2 = _.clone(pagerduty);
@@ -299,8 +315,7 @@ test(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDut
 	});
 });
 
-test(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDuty service with new user', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDuty service with new user', function (t) {
     t.plan(11);
     
     var pagerduty2 = _.clone(pagerduty);
@@ -357,8 +372,7 @@ test(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDut
 	});
 });
 
-test(++testId + ' PagerDuty Broker - Test PUT instance missing phone number', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PUT instance missing phone number', function (t) {
     t.plan(12);
     
     var pagerduty2 = _.clone(pagerduty);
@@ -378,8 +392,7 @@ test(++testId + ' PagerDuty Broker - Test PUT instance missing phone number', fu
     });
 });
 
-test(++testId + ' PagerDuty Broker - Test PUT instance missing email', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PUT instance missing email', function (t) {
     t.plan(1);
     
     var pagerduty2 = _.clone(pagerduty);
@@ -394,8 +407,7 @@ test(++testId + ' PagerDuty Broker - Test PUT instance missing email', function 
 });
 
 // Patch tests
-test(++testId + ' PagerDuty Broker - Test PATCH update instance with account_id and api_key', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PATCH update instance with account_id and api_key', function (t) {
     t.plan(20);
 	
     var pagerduty2 = _.clone(pagerduty);
@@ -437,8 +449,7 @@ test(++testId + ' PagerDuty Broker - Test PATCH update instance with account_id 
 	});
 });
 
-test(++testId + ' PagerDuty Broker - Test PATCH wrong api_key', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PATCH wrong api_key', function (t) {
     t.plan(1);
 	
     var body = {};
@@ -451,8 +462,7 @@ test(++testId + ' PagerDuty Broker - Test PATCH wrong api_key', function (t) {
     });    				
 });
 
-test(++testId + ' PagerDuty Broker - Test PATCH with invalid account_id', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PATCH with invalid account_id', function (t) {
     t.plan(2);
 	
     var body = {};
@@ -468,8 +478,7 @@ test(++testId + ' PagerDuty Broker - Test PATCH with invalid account_id', functi
 });
 
 
-test(++testId + ' PagerDuty Broker - Test PATCH update service_name', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PATCH update service_name', function (t) {
     t.plan(19);
 	
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
@@ -508,8 +517,7 @@ test(++testId + ' PagerDuty Broker - Test PATCH update service_name', function (
 	});
 });
 
-test(++testId + ' PagerDuty Broker - Test PATCH update user_email', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PATCH update user_email', function (t) {
     t.plan(19);
 	
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
@@ -548,8 +556,7 @@ test(++testId + ' PagerDuty Broker - Test PATCH update user_email', function (t)
 	});
 });
 
-test(++testId + ' PagerDuty Broker - Test PATCH update user_phone', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PATCH update user_phone', function (t) {
     t.plan(35);
 	
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
@@ -592,8 +599,7 @@ test(++testId + ' PagerDuty Broker - Test PATCH update user_phone', function (t)
 });
 
 // Bind tests
-test(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
     t.plan(2);
 
     var toolchainUrl = serviceInstanceUrl + '/toolchains/'+ mockToolchainId;
@@ -610,8 +616,7 @@ test(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', funct
 });
 
 // Events tests
-test(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD start failed', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD start failed', function (t) {
 	t.plan(1);
 	
 	// Message Store Event endpoint
@@ -628,8 +633,7 @@ test(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD start 
 	
 });
 
-test(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD finish failed', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD finish failed', function (t) {
 	t.plan(1);
 	
 	// Message Store Event endpoint
@@ -646,8 +650,7 @@ test(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD finish
 	
 });
 
-test(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Unknown service_id', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Unknown service_id', function (t) {
 	t.plan(1);
 	
 	// Message Store Event endpoint
@@ -665,8 +668,7 @@ test(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Unknown s
 	
 });
 
-test(++testId + ' PagerDuty Broker - Test Toolchain Lifecycle Like Event', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test Toolchain Lifecycle Like Event', function (t) {
 	t.plan(1);
 	
 	var lifecycle_event = {"description" : "this a toolchain lifecycle event"};
@@ -678,8 +680,7 @@ test(++testId + ' PagerDuty Broker - Test Toolchain Lifecycle Like Event', funct
 });
 
 // Delete tests
-test(++testId + ' PagerDuty Broker - Test DELETE instance w/ other org', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test DELETE instance w/ other org', function (t) {
     t.plan(1);
     var otherAuth = {
         'Authorization': authenticationTokens[1]
@@ -689,8 +690,7 @@ test(++testId + ' PagerDuty Broker - Test DELETE instance w/ other org', functio
     });
 });
 
-test(++testId + ' PagerDuty Broker - Test DELETE instance', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test DELETE instance', function (t) {
     t.plan(1);
 
     delRequest(serviceInstanceUrl, {header: header}).then(function(resultsFromDel) {
@@ -699,8 +699,7 @@ test(++testId + ' PagerDuty Broker - Test DELETE instance', function (t) {
 });
 
 // Unbind test with wrong org then correct org, the service instance will still remain in the DB
-test(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain w/ other org', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain w/ other org', function (t) {
     t.plan(5);
 
 	async.series([
@@ -745,8 +744,7 @@ test(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain 
 });
 
 // Unbind and delete test
-test(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain and delete it', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain and delete it', function (t) {
     t.plan(5);
 
 	async.series([
@@ -787,9 +785,8 @@ test(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain 
 	});
 });
 
-//Monitoring endpoints
-test(++testId + ' PagerDuty Broker - Test GET status', function (t) {
-	testNumber++;
+// Monitoring endpoints
+test_(++testId + ' PagerDuty Broker - Test GET status', function (t) {
     t.plan(1);
 
     var url = nconf.get('url') + '/status';
@@ -798,8 +795,7 @@ test(++testId + ' PagerDuty Broker - Test GET status', function (t) {
     });
 });
 
-test(++testId + ' PagerDuty Broker - Test GET version', function (t) {
-	testNumber++;
+test_(++testId + ' PagerDuty Broker - Test GET version', function (t) {
     t.plan(1);
 
     var url = nconf.get('url') + '/version';
