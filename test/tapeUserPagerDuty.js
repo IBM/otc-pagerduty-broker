@@ -81,12 +81,12 @@ test('PagerDuty Broker - Test Get Or Create User', function (t) {
     t.plan(2);
     
     pagerdutyUtils.getOrCreatePagerDutyUser(null, pagerdutyApiUrl, pagerdutyApiKey, "New User", pagerduty.user_email,
-    		"+" + pagerduty.user_phone_country +  " " + pagerduty.user_phone_number, function(user) {
+    		"+" + pagerduty.user_phone_country +  " " + pagerduty.user_phone_number, function(err, user) {
     	t.ok(user, "is new user created?");
     });
     
     pagerdutyUtils.getOrCreatePagerDutyUser(null, pagerdutyApiUrl, pagerdutyApiKey, "jaunin b", "jauninb@yahoo.fr",
-    		"+" + pagerduty.user_phone_country +  " " + pagerduty.user_phone_number, function(user) {
+    		"+" + pagerduty.user_phone_country +  " " + pagerduty.user_phone_number, function(err, user) {
     	t.ok(user, "is existing user found and updated?");
     });
     
