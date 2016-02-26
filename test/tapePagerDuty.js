@@ -49,11 +49,7 @@ var authenticationTokens = [];
 var mockUserArray = [];
 
 var currentTime = new Date().valueOf();
-var pagerduty = {};
-pagerduty.service_name = "testPagerDuty" + currentTime;
-pagerduty.user_email = "user" + currentTime + "@ibm.com";
-pagerduty.user_phone_country = '33';
-pagerduty.user_phone_number = "123456789";
+
 var pagerdutyAccountId = nconf.get("pagerduty-account");
 var pagerdutyApiKey = nconf.get("pagerduty-api-key");
 var pagerdutyApiUrl = "https://" + pagerdutyAccountId + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
@@ -176,7 +172,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
        function (callback) {
     	   // wrong api_key
            body.organization_guid = nconf.get('test_app_org_guid');
-           body.parameters = getPostServiceInstanceParameters(pagerduty);
+           body.parameters = getPostServiceInstanceParameters(getTestPagerDutyInfo());
            body.parameters.api_key = "wrong" + body.parameters.api_key; 
            putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
                t.equal(results.statusCode, 400, 'did the put instance with wrong api_key failed?');
@@ -185,7 +181,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
        },
        function (callback) {
     	   // wrong account_id
-           body.parameters = getPostServiceInstanceParameters(pagerduty);
+           body.parameters = getPostServiceInstanceParameters(getTestPagerDutyInfo());
            body.parameters.account_id = "wrong" + body.parameters.account_id; 
            putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
                t.equal(results.statusCode, 400, 'did the put instance with wrong account_id failed?');
@@ -194,7 +190,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
        },
        function (callback) {
     	   // wrong email
-           body.parameters = getPostServiceInstanceParameters(pagerduty);
+           body.parameters = getPostServiceInstanceParameters(getTestPagerDutyInfo());
            body.parameters.user_email = "test@gmail"; 
            putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
                t.equal(results.statusCode, 400, 'did the put instance with wrong email failed?');
@@ -203,7 +199,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
        },
        function (callback) {
     	   // wrong phone number
-           body.parameters = getPostServiceInstanceParameters(pagerduty);
+           body.parameters = getPostServiceInstanceParameters(getTestPagerDutyInfo());
            body.parameters.user_phone = "0123"; 
            putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
                t.equal(results.statusCode, 400, 'did the put instance with wrong phone failed?');
@@ -221,6 +217,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
 test_(++testId + ' PagerDuty Broker - Test PUT instance', function (t) {
     t.plan(19);
 
+    var pagerduty = getTestPagerDutyInfo();
     var body = getNewInstanceBody(pagerduty);
     putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 200, 'did the put instance call succeed?');
@@ -240,10 +237,10 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with names being prefix 
 	async.series([
 		function(callback) {
 			// instance with suffix names
-		    var pagerduty2 = _.clone(pagerduty);
-		    pagerduty2.service_name = getTestServiceName() + " Suffix";
-		    pagerduty2.user_email = getTestUserEmail() + ".suffix";
-    		var body = getNewInstanceBody(pagerduty2);
+		    var pagerduty = getTestPagerDutyInfo();
+		    pagerduty.service_name = pagerduty.service_name + " Suffix";
+		    pagerduty.user_email = pagerduty.user_email + ".suffix";
+    		var body = getNewInstanceBody(pagerduty);
 			putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -251,16 +248,14 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with names being prefix 
 		},
 		function(callback) {
 			// instance with prefix names
-			var pagerduty3 = _.clone(pagerduty);
-	        pagerduty3.service_name = getTestServiceName();
-		    pagerduty3.user_email = getTestUserEmail();
-		    var body = getNewInstanceBody(pagerduty3);
+			var pagerduty = getTestPagerDutyInfo();
+		    var body = getNewInstanceBody(pagerduty);
 		    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
 		        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
 		        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
 		        
 		        // Ensure PagerDuty service and user have been created
-		        assertServiceAndUser(pagerduty3, t);
+		        assertServiceAndUser(pagerduty, t);
 		        
 		        // Ensure dashboard url is accessible
 		        assertDashboardAccessible(results.body, t);
@@ -278,13 +273,11 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with names being prefix 
 test_(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDuty service', function (t) {
     t.plan(6);
     
-    var pagerduty2 = _.clone(pagerduty);
-    pagerduty2.service_name = getTestServiceName();
-    pagerduty2.user_email = getTestUserEmail();
+    var pagerduty = getTestPagerDutyInfo();
 	async.series([
 		function(callback) {
 			// first instance
-    		var body = getNewInstanceBody(pagerduty2);
+    		var body = getNewInstanceBody(pagerduty);
 			putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -292,15 +285,15 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDu
 		},
 		function(callback) {
 			// second instance reuse service of first instance
-	        var pagerduty3 = {};
-	        pagerduty3.service_name = pagerduty2.service_name;	
-		    var body = getNewInstanceBody(pagerduty3);
+	        var pagerduty2 = {};
+	        pagerduty2.service_name = pagerduty.service_name;	
+		    var body = getNewInstanceBody(pagerduty2);
 		    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
 		        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
 		        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
 		        
 		        // Ensure PagerDuty service is reused
-		        assertService(pagerduty3, t, null);
+		        assertService(pagerduty2, t, null);
 		        
 		        // Ensure dashboard url is accessible
 		        assertDashboardAccessible(results.body, t);
@@ -318,13 +311,11 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDu
 test_(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDuty service with new user', function (t) {
     t.plan(11);
     
-    var pagerduty2 = _.clone(pagerduty);
-    pagerduty2.service_name = getTestServiceName();
-    pagerduty2.user_email = getTestUserEmail();
+    var pagerduty = getTestPagerDutyInfo();
 	async.series([
 		function(callback) {
 			// first instance
-    		var body = getNewInstanceBody(pagerduty2);
+    		var body = getNewInstanceBody(pagerduty);
 			putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -332,16 +323,16 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDu
 		},
 		function(callback) {
 			// second instance reuse service of first instance
-	        var pagerduty3 = {};
-	        pagerduty3.service_name = pagerduty2.service_name;	
-	        pagerduty3.user_email = "user" + currentTime + "_" + testNumber + "2@ibm.com";
-		    var body = getNewInstanceBody(pagerduty3);
+	        var pagerduty2 = {};
+	        pagerduty2.service_name = pagerduty.service_name;	
+	        pagerduty2.user_email = "user" + testNumber + "_" + currentTime + "2@ibm.com";
+		    var body = getNewInstanceBody(pagerduty2);
 		    putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
 		        t.equal(results.statusCode, 200, 'did the second put instance call succeed?');
 		        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
 		        
 		        // Ensure a new user is created as primary contact, and the previous user is still a contact
-		        assertService(pagerduty3, t, function(pagerduty, t, pagerdutyHeaders, service) {
+		        assertService(pagerduty2, t, function(t, pagerdutyHeaders, service) {
 			        var escalation_policy = service.escalation_policy;
 			        var escalation_policy_url = pagerdutyApiUrl + "/escalation_policies/" + escalation_policy.id;
 			    	request.get({
@@ -354,11 +345,11 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDu
 						var escalation_rule1 = body.escalation_policy.escalation_rules[0];
 						t.equal(escalation_rule1.targets.length, 1, 'was only 1 target user found?');
 						var target1 = escalation_rule1.targets[0];
-						t.equal(target1.name, "Primary contact (" + pagerduty3.user_email + ")", 'is the first target user correct?');
+						t.equal(target1.name, "Primary contact (" + pagerduty2.user_email + ")", 'is the first target user correct?');
 						var escalation_rule2 = body.escalation_policy.escalation_rules[1];
 						t.equal(escalation_rule2.targets.length, 1, 'was only 1 target user found?');
 						var target2 = escalation_rule2.targets[0];
-						t.equal(target2.name, "Contact (" + pagerduty2.user_email + ")", 'is the second target user correct?');
+						t.equal(target2.name, "Contact (" + pagerduty.user_email + ")", 'is the second target user correct?');
 				        callback();
 					});
 		        });
@@ -375,32 +366,29 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance reusing existing PagerDu
 test_(++testId + ' PagerDuty Broker - Test PUT instance missing phone number', function (t) {
     t.plan(12);
     
-    var pagerduty2 = _.clone(pagerduty);
-    pagerduty2.service_name = getTestServiceName();
-    pagerduty2.user_email = getTestUserEmail();
-    delete pagerduty2.user_phone_country;
-    delete pagerduty2.user_phone_number;
+    var pagerduty = getTestPagerDutyInfo();
+    delete pagerduty.user_phone_country;
+    delete pagerduty.user_phone_number;
 
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
-	var body = getNewInstanceBody(pagerduty2);
+	var body = getNewInstanceBody(pagerduty);
     putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 200, 'did the put instance call succeed?');
         t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
         
         // Ensure PagerDuty service and user have been created
-        assertServiceAndUser(pagerduty2, t);
+        assertServiceAndUser(pagerduty, t);
     });
 });
 
 test_(++testId + ' PagerDuty Broker - Test PUT instance missing email', function (t) {
     t.plan(1);
     
-    var pagerduty2 = _.clone(pagerduty);
-    pagerduty2.service_name = getTestServiceName();
-    delete pagerduty2.user_email;
+    var pagerduty = getTestPagerDutyInfo();
+    delete pagerduty.user_email;
 
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
-    var body = getNewInstanceBody(pagerduty2);
+    var body = getNewInstanceBody(pagerduty);
     putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         t.equal(results.statusCode, 400, 'did the put instance call fail with a bad request?');
     });
@@ -410,14 +398,12 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance missing email', function
 test_(++testId + ' PagerDuty Broker - Test PATCH update instance with account_id and api_key', function (t) {
     t.plan(20);
 	
-    var pagerduty2 = _.clone(pagerduty);
-    pagerduty2.service_name = getTestServiceName();
-    pagerduty2.user_email = getTestUserEmail();
+    var pagerduty = getTestPagerDutyInfo();
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
  	async.series([
 		function(callback) {
 			// create service instance
-   			var body = getNewInstanceBody(pagerduty2);
+   			var body = getNewInstanceBody(pagerduty);
 			putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -438,7 +424,7 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update instance with account_id
 	            t.equal(resultFromPatch.body.parameters.api_key, pagerdutyApiKey2, 'did the put instance call return the right API key?');
 		        // check that the service is created on new account
 		        var apiUrl2 = "https://" + pagerdutyAccountId2 + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
-		        assertServiceAndUserOnAccount(apiUrl2, pagerdutyApiKey2, pagerduty2, t);
+		        assertServiceAndUserOnAccount(apiUrl2, pagerdutyApiKey2, pagerduty, t);
 		        callback();
 		    });    
 		}
@@ -482,13 +468,11 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update service_name', function 
     t.plan(19);
 	
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
-    var pagerduty2 = _.clone(pagerduty);
-    pagerduty2.service_name = getTestServiceName();
-    pagerduty2.user_email = getTestUserEmail();
+    var pagerduty = getTestPagerDutyInfo();
 	async.series([
 		function(callback) {
 			// create service instance
-   			var body = getNewInstanceBody(pagerduty2);
+   			var body = getNewInstanceBody(pagerduty);
 			putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -497,7 +481,7 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update service_name', function 
 		function(callback) {
 			// patch service_name
 		    var body = {};
-		    var newServiceName = "(Updated) " + pagerduty2.service_name;
+		    var newServiceName = "(Updated) " + pagerduty.service_name;
 		    body.parameters = {
 		    	"service_name": newServiceName
 		    };
@@ -505,8 +489,8 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update service_name', function 
 		        t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
 		        t.equal(resultFromPatch.body.parameters.service_name, newServiceName, 'did the patch instance call return the right service name?');
 				// check that the service is created
-				pagerduty2.service_name = newServiceName;
-		        assertServiceAndUser(pagerduty2, t);
+				pagerduty.service_name = newServiceName;
+		        assertServiceAndUser(pagerduty, t);
 		        callback();
 		    });    
 		}
@@ -521,13 +505,11 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update user_email', function (t
     t.plan(19);
 	
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
-    var pagerduty2 = _.clone(pagerduty);
-    pagerduty2.service_name = getTestServiceName();
-    pagerduty2.user_email = getTestUserEmail();
+    var pagerduty = getTestPagerDutyInfo();
 	async.series([
 		function(callback) {
 			// create service instance
-   			var body = getNewInstanceBody(pagerduty2);
+   			var body = getNewInstanceBody(pagerduty);
 			putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -544,8 +526,8 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update user_email', function (t
 		        t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
      			t.equal(resultFromPatch.body.parameters.user_email, newEmail, 'did the patch instance call return the right email?');
 				// check that the service is updated
-				pagerduty2.user_email = newEmail;
-		        assertServiceAndUser(pagerduty2, t);
+				pagerduty.user_email = newEmail;
+		        assertServiceAndUser(pagerduty, t);
 		        callback();
 		    });    
 		}
@@ -560,13 +542,11 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update user_phone', function (t
     t.plan(35);
 	
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
-    var pagerduty2 = _.clone(pagerduty);
-    pagerduty2.service_name = getTestServiceName();
-    pagerduty2.user_email = getTestUserEmail();
+    var pagerduty = getTestPagerDutyInfo();
 	async.series([
 		function(callback) {
 			// create service instance
-   			var body = getNewInstanceBody(pagerduty2);
+   			var body = getNewInstanceBody(pagerduty);
 			putRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(results) {
         		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
 				callback();
@@ -584,10 +564,10 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update user_phone', function (t
 		        t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
      			t.equal(resultFromPatch.body.parameters.user_phone, newPhone, 'did the patch instance call return the right phone?');
 		        // check that the old phone number is still registered
-		        assertServiceAndUser(pagerduty2, t);
+		        assertServiceAndUser(pagerduty, t);
 		        // check that the new phone number is registered 
-		        pagerduty2.user_phone_number = newUserPhoneNumber;
-		        assertServiceAndUser(pagerduty2, t);
+		        pagerduty.user_phone_number = newUserPhoneNumber;
+		        assertServiceAndUser(pagerduty, t);
 		        callback();
 		    });    
 		}
@@ -705,7 +685,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 	async.series([
 		function(callback) {
 			// create service instance
-   			var body = getNewInstanceBody(pagerduty);
+   			var body = getNewInstanceBody(getTestPagerDutyInfo());
 			putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
 		        t.equal(results.statusCode, 200, 'did the put instance call succeed?');
 		        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
@@ -750,7 +730,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 	async.series([
 		function(callback) {
 			// create service instance
-   			var body = getNewInstanceBody(pagerduty);
+   			var body = getNewInstanceBody(getTestPagerDutyInfo());
 			putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
 		        t.equal(results.statusCode, 200, 'did the put instance call succeed?');
 		        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
@@ -843,7 +823,7 @@ function assertServiceOnAccount(apiUrl, apiKey, pagerduty, t, callback) {
         t.equal(foundServices.length, 1, 'was exactly 1 service found?');
         var service = foundServices[0];
         if (callback)
-        	return callback(pagerduty, t, pagerdutyHeaders, service);
+        	return callback(t, pagerdutyHeaders, service);
         return;
 	});
 }
@@ -855,7 +835,7 @@ function assertServiceAndUser(pagerduty, t) {
 }
 
 function assertServiceAndUserOnAccount(apiUrl, apiKey, pagerduty, t) {
-	assertServiceOnAccount(apiUrl, apiKey, pagerduty, t, function(pagerduty, t, pagerdutyHeaders, service) {
+	assertServiceOnAccount(apiUrl, apiKey, pagerduty, t, function(t, pagerdutyHeaders, service) {
         var escalation_policy = service.escalation_policy;
         var userName = "Primary contact (" + pagerduty.user_email + ")";
         t.equal(escalation_policy.name, "Policy for " + pagerduty.service_name, 'was the right escalation policy created?');
@@ -929,12 +909,21 @@ function getNewInstanceBody(pagerduty) {
 	return body;
 }
 
+function getTestPagerDutyInfo() {
+	var pagerduty = {};
+	pagerduty.service_name = getTestServiceName();
+	pagerduty.user_email = getTestUserEmail();
+	pagerduty.user_phone_country = '33';
+	pagerduty.user_phone_number = "123456789";
+	return pagerduty;
+}
+
 function getTestUserEmail() {
-	return "user" + currentTime + "_" + testNumber + "@ibm.com";
+	return "user" + testNumber + "_" + currentTime + "@ibm.com";
 }
 
 function getTestServiceName() {
-	return "(" + testNumber + ") " + pagerduty.service_name;
+	return "(" + testNumber + ") Test service " + currentTime;
 }
 
 function getPostServiceInstanceParameters(pagerduty) {
