@@ -13,6 +13,7 @@
 		"agentkeepalive": "0.2.3",
 		"nano-doc-updater": "git+https://github.ibm.com/org-ids/node-nano-doc-updater#v0.0.1",
 		"swagger-ui-middleware": "git+https://github.ibm.com/org-ids/node-swagger-ui-middleware#v0.0.1",
+        "node-tiam-client": "git+https://github.ibm.com/org-ids/node-tiam-client",
 		"request": "*"
 	},
 	"devDependencies": {
