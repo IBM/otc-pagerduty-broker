@@ -58,29 +58,17 @@ var pagerdutyApiUrl = "https://" + pagerdutyAccountId + '.' + nconf.get("service
 var testId = 0;
 var testNumber = 0; // cannot use the same var as testId is incremented when the tests are read by tape, not when they are executed
 
-var servicesToDelete = [];
+var toDelete = [];
 
 function setup(t) {
     testNumber++;
 }
 
 function teardown(t) {
-	// Delete service instances and PagerDuty services
-	_.forEach(servicesToDelete, function(service, i) {
-		request.del({
-			uri: service.url,
-			json: true,
-			headers: service.headers
-		}, function(err, reqRes, body) {
-			if (err) {
-				t.fail("Could not delete " + service.url + " error: " + err);
-			}
-	        if (reqRes && reqRes.statusCode != 204) {
-	        	t.fail("Could not delete " + service.url + " response: " + JSON.stringify(reqRes, null, 2));
-	        }
-		});
-	});
-	servicesToDelete = [];
+	// Delete service instances, PagerDuty services, escalation policies and users created by the test
+	deleteAllFrom(toDelete, 0, ['service_instance', 'pagerduty_service', 'escalation_policy', 'user'], 0, t);
+	toDelete = [];
+	
 }
 
 function test_(name, testCode) {
@@ -544,10 +532,12 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update service_name', function 
 		    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(resultFromPatch) {
 		        t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
 		        t.equal(resultFromPatch.body.parameters.service_name, newServiceName, 'did the patch instance call return the right service name?');
-				// check that the service is created
-				pagerduty.service_name = newServiceName;
-		        assertServiceAndUser(pagerduty, t);
-		        callback();
+		        addServiceToDelete(null, null, resultFromPatch.body.dashboard_url, pagerdutyDefaultHeaders, function() {
+					// check that the service is created
+					pagerduty.service_name = newServiceName;
+			        assertServiceAndUser(pagerduty, t);
+			        callback();
+		        });
 		    });    
 		}
 	], function(err, results) {
@@ -574,17 +564,19 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update user_email', function (t
 		function(callback) {
 			// patch user_email
 		    var body = {};
-		    var newEmail = "user" + currentTime + ".updated@ibm.com";
+		    var newEmail =  "user" + testNumber + "_" + currentTime + ".updated@ibm.com";
 		    body.parameters = {
 		    	"user_email": newEmail
 		    };
 		    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(resultFromPatch) {
 		        t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
      			t.equal(resultFromPatch.body.parameters.user_email, newEmail, 'did the patch instance call return the right email?');
-				// check that the service is updated
-				pagerduty.user_email = newEmail;
-		        assertServiceAndUser(pagerduty, t);
-		        callback();
+		        addServiceToDelete(null, null, resultFromPatch.body.dashboard_url, pagerdutyDefaultHeaders, function() {
+					// check that the service is updated
+					pagerduty.user_email = newEmail;
+			        assertServiceAndUser(pagerduty, t);
+			        callback();
+		        });
 		    });    
 		}
 	], function(err, results) {
@@ -646,7 +638,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', func
    			var body = getNewInstanceBody(pagerduty);
 			putServiceInstance(serviceInstanceUrl, header, body, function(results) {
         		t.equal(results.statusCode, 200, 'did the put instance call succeed?');
-        		removeServiceToDelete(serviceInstanceUrl); // keep the service instance for now, it will be used by tests below, and deleted by another test
+        		removeFromToDelete('service_instance', serviceInstanceUrl); // keep the service instance for now, it will be used by tests below, and deleted by another test
 				callback();
 			});
 		},
@@ -830,7 +822,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 			// delete service instance
 		     delRequest(serviceInstanceUrl, {header: header}).then(function(resultsFromDel) {
 				t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
-				removeServiceToDelete(serviceInstanceUrl); // do not try to delete it again
+				removeFromToDelete('service_instance', serviceInstanceUrl); // do not try to delete it again
 		        callback();
 		    });    
 		}
@@ -868,28 +860,101 @@ test_(++testId + ' PagerDuty Broker - Test GET version', function (t) {
 
 // Utility functions
 
-function addServiceToDelete(serviceInstanceUrl, serviceInstanceHeaders, dashboardUrl, pagerdutyHeaders) {
-	if (!_.findWhere(servicesToDelete, {url: serviceInstanceUrl})) {
-		servicesToDelete[servicesToDelete.length] = {
-			url: serviceInstanceUrl,
-			headers: serviceInstanceHeaders
-		}
-	}
+function addServiceToDelete(serviceInstanceUrl, serviceInstanceHeaders, dashboardUrl, pagerdutyHeaders, callback) {
+	// service instance
+	addToDeleteIfAbsent('service_instance', serviceInstanceUrl, serviceInstanceHeaders);
+	
+	// PagerDuty service
 	var index = dashboardUrl.indexOf('/services');
-	var pagerdutyServiceUrl = dashboardUrl.substring(0, index) + '/api/v1' + dashboardUrl.substring(index);
-	if (!_.findWhere(servicesToDelete, {url: pagerdutyServiceUrl})) {
-		servicesToDelete[servicesToDelete.length] = {
-			url: pagerdutyServiceUrl,
-			headers: pagerdutyHeaders
+	var apiUrl = dashboardUrl.substring(0, index) + '/api/v1';
+	var pagerdutyServiceUrl = apiUrl + dashboardUrl.substring(index);
+	addToDeleteIfAbsent('pagerduty_service', pagerdutyServiceUrl, pagerdutyHeaders);
+	
+	// escalation policy
+	request.get({
+		uri: pagerdutyServiceUrl+'?include[]=escalation_policy',
+		json: true,
+		headers: pagerdutyHeaders
+	}, function(err, reqRes, body) {
+		if (reqRes.statusCode == 200) {
+			var escalationPolicyId = body.service.escalation_policy.id;
+			var escalationPolicyUrl = apiUrl + '/escalation_policies/' + escalationPolicyId;
+			addToDeleteIfAbsent('escalation_policy', escalationPolicyUrl, pagerdutyHeaders); // escalation_rules are deleted along with escalation_policies
+			request.get({
+				uri: escalationPolicyUrl,
+				json: true,
+				headers: pagerdutyHeaders
+			}, function(err, reqRes, body) {
+				// users
+				if (reqRes.statusCode == 200) {
+					var escalationRules = body.escalation_policy.escalation_rules;
+					_.forEach(escalationRules, function(rule) {
+						var escalationRuleUrl = escalationPolicyUrl + '/escalation_rules/' + rule.id;
+						var targets = rule.targets;
+						_.forEach(targets, function(target) {
+							if (target.name == 'Primary contact (' + target.email + ')'
+									|| target.name == 'Contact (' + target.email + ')') {
+								var userUrl = apiUrl + '/users/' + target.id;
+								addToDeleteIfAbsent('user', userUrl, pagerdutyHeaders);
+							}
+						});
+					});
+				}
+				callback();
+			});
+		}
+	});
+}
+
+function addToDeleteIfAbsent(type, url, headers) {
+	if (!url)
+		return;
+	var toDeleteForType = toDelete[type]
+	if (!toDeleteForType) {
+		toDeleteForType = toDelete[type] = [];
+	}
+	if (!_.findWhere(toDeleteForType, {url: url})) {
+		toDeleteForType[toDeleteForType.length] = {
+			url: url,
+			headers: headers
 		}
 	}
 }
 
-function removeServiceToDelete(url) {
-	var service = _.findWhere(servicesToDelete, {url: url});
-	if (service) {
-		servicesToDelete = _.without(servicesToDelete, service);
+function removeFromToDelete(type, url) {
+	var toDeleteForType = toDelete[type]
+	if (!toDeleteForType) {
+		return;
 	}
+	var service = _.findWhere(toDeleteForType, {url: url});
+	if (service) {
+		toDelete[type] = _.without(toDeleteForType, service);
+	}
+}
+
+function deleteAllFrom(collections, collectionIndex, types, typeIndex, t) {
+	if (typeIndex == types.length) {
+		return;
+	}
+	var type = types[typeIndex];
+	var collection = collections[type];
+	if (!collection || collectionIndex == collection.length) {
+		return deleteAllFrom(collections, 0, types, typeIndex+1, t)
+	}
+	var object = collection[collectionIndex];
+	request.del({
+		uri: object.url,
+		json: true,
+		headers: object.headers
+	}, function(err, reqRes, body) {
+		if (err) {
+			t.fail("Could not delete " + object.url + " error: " + err);
+		}
+        if (reqRes && reqRes.statusCode != 204) {
+        	t.fail("Could not delete " + object.url + " response: " + JSON.stringify(reqRes, null, 2));
+        }
+        deleteAllFrom(collections, collectionIndex+1, types, typeIndex, t);
+	});
 }
 
 function assertDashboardAccessible(body, t) {
@@ -1166,7 +1231,10 @@ function putRequest(url, options) {
 function putServiceInstance(serviceInstanceUrl, header, body, callback) {
 	putRequest(serviceInstanceUrl, {header: header, body: JSON.stringify(body)}).then(function(results) {
 		if (results && results.statusCode == 200) {
-			addServiceToDelete(serviceInstanceUrl, header, results.body.dashboard_url, pagerdutyDefaultHeaders);
+			addServiceToDelete(serviceInstanceUrl, header, results.body.dashboard_url, pagerdutyDefaultHeaders, function() {
+				callback(results);
+			});
+			return;
 		}
 		callback(results);
 	});
