@@ -8,10 +8,31 @@
  */
 "use strict";
 
+//configure nconf and logging early
+var nconf = require("nconf"),
+	log4js = require("log4js");
+
+//Configuration for logging
+log4js.configure("./config/log4js.json", {
+    reloadSecs: 30
+});
+
+var logger = log4js.getLogger("otc-pagerduty-broker"),
+ 	logBasePath = "index";
+
+//Configuration for nconf
+populateNconfSync();
+
+//require new relic before any middleware (especially express).
+if (nconf.get('ENABLE_NEW_RELIC')) {
+    logger.info('New Relic configuring');
+    require('newrelic');
+    logger.info('New Relic enabled');
+}
+
 var
  async = require("async"),
  express = require("express"),
- log4js = require("log4js"),
  nconf = require("nconf"),
  util = require("util"),
  nano = require("nano"),
@@ -27,28 +48,17 @@ var
  url = require("url")
 ;
 
-// Swgager (temporary until within pipeline stage/job)
+// Swagger (temporary until within pipeline stage/job)
 var swaggerUiMiddleware = require("swagger-ui-middleware"),
 otcPagerDutyBrokerSwaggerSpecFile = path.join(__dirname, "/spec", "otc-pagerduty-broker-swagger-spec.json"),
 otcPagerDutyBrokerSwaggerSpec = require(otcPagerDutyBrokerSwaggerSpecFile);
 
-// Configuration for logging
-log4js.configure("./config/log4js.json", {
-    reloadSecs: 30
-});
-
-var logger = log4js.getLogger("pagerduty-broker"),
- 	logBasePath = "index";
 
 async.auto({
-    configureNconf: function (callback) {
-    	populateNconfSync();
-        callback();
-    },
-    validateOptions: [ "configureNconf", function (callback) {
+    validateOptions: function (callback) {
     	validateConfSync();
         callback();
-    }],
+    },
     createDb: [ "validateOptions", function (callback) {
         createDb(callback);
     }],
@@ -154,15 +164,12 @@ function configureAppSync(db) {
 		next();
 	})
 
-	// Temporary in order to have message coming from webhookmanager pipeline
-	.use("/pagerduty-broker/unsecured/event/v1/", require("./lib/event/event"))
-
 	.get("/pagerduty-broker", function (req, res/*, next*/) {
 		db.view("pagerduty", "service_instances", function (err, r) {
 			var page = "" +
 			"<!-- DOCTYPE: html -->\n" +
 			"<html><head><title>PagerDuty Service</title></head><body>" +
-			"<p>I'm doing nothing in particular.  Especially when it comes to these service_instances:</p>" +
+			"<p>This is a broker for PagerDuty</p>" +
 			"<table border='1'>"+
 			"<tr><th>Service Instance Id</th><th>Parameters</th><th>Toolchain</th></tr>"+
 			_.pluck(r.rows, "value").map(function (serviceInstance) {
@@ -188,7 +195,7 @@ function configureAppSync(db) {
 
 	.use("/pagerduty-broker/api/v1/service_instances", require("./lib/middleware/service_instances"))
 
-	//Handle errors
+	// Handle errors
 	.use(function(error, req, res, next) {
 		if (error) {
 			logger.error(logPrefix + "The application request failed with the" +

@@ -5,5 +5,6 @@
 	"schemes": "https,http",
     "uaa": {
         "fetchTokenURL": "https://login.stage1.ng.bluemix.net/UAALoginServerWAR/oauth/token"
-    }
+    },
+	"ENABLE_NEW_RELIC": false
 }
