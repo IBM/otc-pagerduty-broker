@@ -24,7 +24,8 @@ var logger = log4js.getLogger("otc-pagerduty-broker"),
 populateNconfSync();
 
 //require new relic before any middleware (especially express).
-if (nconf.get('ENABLE_NEW_RELIC')) {
+var enableNewRelic = nconf.get('ENABLE_NEW_RELIC');
+if (enableNewRelic == 'true') {
     logger.info('New Relic configuring');
     require('newrelic');
     logger.info('New Relic enabled');
