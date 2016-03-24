@@ -3,7 +3,7 @@
 	"author": "Jerome Lanneluc <jerome_lanneluc@fr.ibm.com>",
 	"contributors": ["Benoit Jaunin <jauninb@fr.ibm.com>"],
 	"dependencies": {
-		"async": "*",
+		"async": "1.5.2",
 		"log4js": "*",
 		"express": "*",
 		"nconf": "*",
