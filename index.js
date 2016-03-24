@@ -235,11 +235,13 @@ function createDb(callback) {
 
 	nanoObj.db.create(DB_NAME, function (err/*, r*/) {
 		if (err && err.error !== "file_exists") {
-				logger.error(logPrefix + "Creating the database failed with the " +
-					"following error: " + err.toString());
+			logger.error(logPrefix + "Creating the database failed with the " +
+				"following error: " + err.toString());
 
-				return callback("Could not create db: " + err.toString());
-			}
+			return callback("Could not create db: " + err.toString());
+		}
+		
+		logger.debug(JSON.stringify(callback));
 
 		callback(null, nanoObj.use(DB_NAME));
 	});
