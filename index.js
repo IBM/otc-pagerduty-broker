@@ -241,8 +241,6 @@ function createDb(callback) {
 			return callback("Could not create db: " + err.toString());
 		}
 		
-		logger.debug(logPrefix + "callback=" + callback);
-
 		callback(null, nanoObj.use(DB_NAME));
 	});
 }
