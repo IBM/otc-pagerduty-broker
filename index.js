@@ -188,13 +188,14 @@ function configureAppSync(db) {
 		});
 	})
 
+	// OTC lifecycle operations (i.e. provision, bind, unprovision, unbind)
+	.use("/pagerduty-broker/api/v1/service_instances", require("./lib/middleware/service_instances"))
+
     // Try to fetch the user profile from the Authorization header.
 	.use(fetchAuthMiddleware(tiamClient))
 	
 	// Endpoint for the lifecycle messaging store and toolchain api lifecycle events
 	.use("/pagerduty-broker/api/v1/messaging", require("./lib/event/event"))
-
-	.use("/pagerduty-broker/api/v1/service_instances", require("./lib/middleware/service_instances"))
 
 	// Handle errors
 	.use(function(error, req, res, next) {

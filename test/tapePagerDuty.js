@@ -106,7 +106,7 @@ test_(++testId + ' PagerDuty Broker - Test Setup', function (t) {
 
 //Authentication testing
 test_(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
-    t.plan(4);
+    t.plan(3);
 
     var body = {
         'service_id': 'pagerduty',
@@ -116,6 +116,9 @@ test_(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
         'Authorization': ''
     };
 
+    // Security Model since Public-beta
+    header.Authorization = "Basic " + new Buffer(nconf.get("TIAM_CLIENT_ID") + ":" + nconf.get("OTC_API_BROKER_SECRET")).toString('base64');
+    
 	async.series([
 		function(callback) {
 			// no header
@@ -132,18 +135,10 @@ test_(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
 			});
 		},
 		function(callback) {
-			// no bearer token
-            auth.Authorization = 'token';
-            putServiceInstance(serviceInstanceUrl, auth, body, function(resultNoBearer) {
-				t.equal(resultNoBearer.statusCode, 401, 'did the authentication request with no bearer in the Auth header fail?');
-				callback();
-			});
-		},
-		function(callback) {
-			// invalid bearer token
-            auth.Authorization = 'BEARER token';
-            putServiceInstance(serviceInstanceUrl, auth, body, function(resultInvalidToken) {
-                t.equal(resultInvalidToken.statusCode, 401, 'did the authentication request an invalid token in the Auth header fail?');
+			// no basic token
+            auth.Authorization = 'basic';
+            putServiceInstance(serviceInstanceUrl, auth, body, function(resultInvalidCreds) {
+				t.equal(resultInvalidCreds.statusCode, 401, 'did the authentication request with no basic creads in the Auth basic header fail?');
 				callback();
 			});
 		}
@@ -674,7 +669,10 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD start
 	message_store_pipeline_event.toolchain_id = mockToolchainId;
 	message_store_pipeline_event.instance_id = mockServiceInstanceId;
 	
-    postRequest(messagingEndpoint, {header: header, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
+	// Temp - Use Bearer for now until full security model adoption
+	var bearerHeader = {Authorization: authenticationTokens[0]};
+
+	postRequest(messagingEndpoint, {header: bearerHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
     });	
 	
@@ -691,7 +689,10 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD finis
 	message_store_pipeline_event.toolchain_id = mockToolchainId;
 	message_store_pipeline_event.instance_id = mockServiceInstanceId;
 	
-    postRequest(messagingEndpoint, {header: header, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
+	// Temp - Use Bearer for now until full security model adoption
+	var bearerHeader = {Authorization: authenticationTokens[0]};
+
+    postRequest(messagingEndpoint, {header: bearerHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
     });	
 	
@@ -709,7 +710,10 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Unknown 
 	message_store_pipeline_event.instance_id = mockServiceInstanceId;
 	message_store_pipeline_event.service_id = 'unknown';
 	
-    postRequest(messagingEndpoint, {header: header, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
+	// Temp - Use Bearer for now until full security model adoption
+	var bearerHeader = {Authorization: authenticationTokens[0]};
+
+    postRequest(messagingEndpoint, {header: bearerHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
     });	
 	
@@ -718,25 +722,18 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Unknown 
 test_(++testId + ' PagerDuty Broker - Test Toolchain Lifecycle Like Event', function (t) {
 	t.plan(1);
 	
+	// Temp - Use Bearer for now until full security model adoption
+	var bearerHeader = {Authorization: authenticationTokens[0]};
+
 	var lifecycle_event = {"description" : "this a toolchain lifecycle event"};
 	// Simulate a Toolchain Lifecycle event
-    postRequest(event_endpoints.toolchain_lifecycle_webhook_url, {header: header, body: JSON.stringify(lifecycle_event)}).then(function(resultFromPost) {
+    postRequest(event_endpoints.toolchain_lifecycle_webhook_url, {header: bearerHeader, body: JSON.stringify(lifecycle_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the toolchain lifecycle event sending call succeed?');
     });	
 	
 });
 
 // Delete tests
-test_(++testId + ' PagerDuty Broker - Test DELETE instance w/ other org', function (t) {
-    t.plan(1);
-    var otherAuth = {
-        'Authorization': authenticationTokens[1]
-    };
-    delRequest(serviceInstanceUrl, {header: otherAuth}).then(function(resultsFromDel) {
-		t.equal(resultsFromDel.statusCode, 403, 'did the instance with other org fail to delete?');
-    });
-});
-
 test_(++testId + ' PagerDuty Broker - Test DELETE instance', function (t) {
     t.plan(1);
 
@@ -745,9 +742,9 @@ test_(++testId + ' PagerDuty Broker - Test DELETE instance', function (t) {
     });
 });
 
-// Unbind test with wrong org then correct org, the service instance will still remain in the DB
-test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain w/ other org', function (t) {
-    t.plan(5);
+// Unbind test, the service instance will still remain in the DB
+test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain', function (t) {
+    t.plan(4);
 
 	async.series([
 		function(callback) {
@@ -767,17 +764,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 		    });    
 		},
 		function(callback) {
-			// attempt unbind service instance from toolchain with wrong org
-		    var otherAuth = {
-		        'Authorization': authenticationTokens[1]
-		    };
-		    delRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: otherAuth}).then(function(resultsFromDel) {
-				t.equal(resultsFromDel.statusCode, 403, 'did the unbind instance call with other org fail?');
-		        callback();
-		    });    
-		},
-		function(callback) {
-			// unbind service instance from toolchain with correct org
+			// unbind service instance from toolchain 
 		    delRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header}).then(function(resultsFromDel) {
 				t.equal(resultsFromDel.statusCode, 204, 'did the unbind instance call succeed?');
 		        callback();
