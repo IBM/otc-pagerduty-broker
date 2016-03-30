@@ -621,6 +621,20 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update user_phone', function (t
 	});
 });
 
+test_(++testId + ' PagerDuty Broker - Test PATCH unknown instance', function (t) {
+    t.plan(1);
+	
+    var serviceInstanceUrl2 = serviceInstanceUrlPrefix + 'unknow_service';
+    var body = {};
+    var newEmail =  "user" + testNumber + "_" + currentTime + ".updated@ibm.com";
+    body.parameters = {
+    	"user_email": newEmail
+    };
+    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(resultFromPatch) {
+        t.equal(resultFromPatch.statusCode, 404, 'did the patch instance call fail?');
+    });    
+});
+
 // Bind tests
 test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
     t.plan(3);
@@ -655,6 +669,16 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', func
 			t.fail(err);
 		}
 	});
+});
+
+test_(++testId + ' PagerDuty Broker - Test PUT bind unknown instance to unknown toolchain', function (t) {
+    t.plan(1);
+
+    var toolchainUrl = serviceInstanceUrlPrefix + 'unknow_service/toolchains/unknow_toolchain';
+    putRequest(toolchainUrl, {header: header}).then(function(resultsFromBind) {
+        t.equal(resultsFromBind.statusCode, 404, 'did the bind instance to toolchain call fail?');
+    });
+
 });
 
 // Events tests
@@ -742,6 +766,15 @@ test_(++testId + ' PagerDuty Broker - Test DELETE instance', function (t) {
     });
 });
 
+test_(++testId + ' PagerDuty Broker - Test DELETE unknown instance', function (t) {
+    t.plan(1);
+
+    var serviceInstanceUrl2 = serviceInstanceUrlPrefix + 'unknown_service';
+    delRequest(serviceInstanceUrl2, {header: header}).then(function(resultsFromDel) {
+		t.equal(resultsFromDel.statusCode, 404, 'did the delete instance call fail?');
+    });
+});
+
 // Unbind test, the service instance will still remain in the DB
 test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain', function (t) {
     t.plan(4);
@@ -776,6 +809,15 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 		}
 	});
 });
+
+test_(++testId + ' PagerDuty Broker - Test DELETE unbind unnknown instance from unknown toolchain', function (t) {
+    t.plan(1);
+
+    delRequest(serviceInstanceUrlPrefix + 'unknown_instance/toolchains/unknown_toolchain', {header: header}).then(function(resultsFromDel) {
+		t.equal(resultsFromDel.statusCode, 404, 'did the unbind instance call failed?');
+    });
+});
+
 
 // Unbind and delete test
 test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain and delete it', function (t) {
