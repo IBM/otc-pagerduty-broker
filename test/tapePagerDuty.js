@@ -421,8 +421,8 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update instance with account_id
 		    };
 		    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(resultFromPatch) {
 		        t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
-	            t.equal(resultFromPatch.body.parameters.account_id, pagerdutyAccountId2, 'did the put instance call return the right account id?');
-	            t.equal(resultFromPatch.body.parameters.api_key, pagerdutyApiKey2, 'did the put instance call return the right API key?');
+	            t.equal(resultFromPatch.body.parameters.account_id, pagerdutyAccountId2, 'did the patch instance call return the right account id?');
+	            t.equal(resultFromPatch.body.parameters.api_key, pagerdutyApiKey2, 'did the patch instance call return the right API key?');
 		        // check that the service is created on new account
 		        var apiUrl2 = "https://" + pagerdutyAccountId2 + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
 		        assertServiceAndUserOnAccount(apiUrl2, pagerdutyApiKey2, pagerduty, t);
@@ -637,7 +637,7 @@ test_(++testId + ' PagerDuty Broker - Test PATCH unknown instance', function (t)
 
 // Bind tests
 test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
-    t.plan(3);
+    t.plan(4);
 
     var toolchainUrl = serviceInstanceUrl + '/toolchains/'+ mockToolchainId;
 	async.series([
@@ -654,14 +654,17 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', func
 		function(callback) {
 			// bind service instance to toolchain
 		    putRequest(toolchainUrl, {header: header}).then(function(resultsFromBind) {
-		        t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
-		        //t.comment(JSON.stringify(resultsFromBind));
-		        if (_.isString(resultsFromBind.body.toolchain_lifecycle_webhook_url)) {
-		            t.ok(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'did the toolchain_lifecycle_webhook_url value returned and valid ?');
-		            event_endpoints.toolchain_lifecycle_webhook_url = resultsFromBind.body.toolchain_lifecycle_webhook_url;
-		        } else {
-		            t.notOk(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'is not a valid returned url for toolchain_lifecycle_webhook_url ?');            	
-		        }
+		        t.equal(resultsFromBind.statusCode, 400, 'did the bind instance w/o toolchain_credentials failed?');
+			    putRequest(toolchainUrl, {header: header, body: JSON.stringify({toolchain_credentials: 'toolchainCreds'})}).then(function(resultsFromBind) {
+			        t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
+			        //t.comment(JSON.stringify(resultsFromBind));
+			        if (_.isString(resultsFromBind.body.toolchain_lifecycle_webhook_url)) {
+			            t.ok(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'did the toolchain_lifecycle_webhook_url value returned and valid ?');
+			            event_endpoints.toolchain_lifecycle_webhook_url = resultsFromBind.body.toolchain_lifecycle_webhook_url;
+			        } else {
+			            t.notOk(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'is not a valid returned url for toolchain_lifecycle_webhook_url ?');            	
+			        }
+			    });
 		    });
 		}
 	], function(err, results) {
@@ -675,7 +678,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind unknown instance to unknown 
     t.plan(1);
 
     var toolchainUrl = serviceInstanceUrlPrefix + 'unknow_service/toolchains/unknow_toolchain';
-    putRequest(toolchainUrl, {header: header}).then(function(resultsFromBind) {
+    putRequest(toolchainUrl, {header: header, body: JSON.stringify({toolchain_credentials: 'toolchainCreds'})}).then(function(resultsFromBind) {
         t.equal(resultsFromBind.statusCode, 404, 'did the bind instance to toolchain call fail?');
     });
 
@@ -791,7 +794,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 		},
 		function(callback) {
 			// bind service instance to toolchain
-		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header}).then(function(resultsFromBind) {
+		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header, body: JSON.stringify({toolchain_credentials: 'toolchainCreds'})}).then(function(resultsFromBind) {
                 t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
 		        callback();
 		    });    
@@ -835,7 +838,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 		},
 		function(callback) {
 			// bind service instance to toolchain
-		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header}).then(function(resultsFromBind) {
+		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header, body: JSON.stringify({toolchain_credentials: 'toolchainCreds'})}).then(function(resultsFromBind) {
                 t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
 		        callback();
 		    });    
@@ -1100,6 +1103,7 @@ function getNewInstanceBody(pagerduty) {
     body.service_id = 'pagerduty';
     body.organization_guid = nconf.get('test_app_org_guid');
     body.parameters = getPostServiceInstanceParameters(pagerduty);
+    body.service_credentials = 'servicecreds';
 	return body;
 }
 
