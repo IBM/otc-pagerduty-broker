@@ -1,6 +1,6 @@
 {
     "levels": {
-        "pagerduty-broker": "DEBUG",
+        "pagerduty-broker": "INFO",
         "request": "OFF"
     },
     "appenders": [
