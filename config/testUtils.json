@@ -15,5 +15,7 @@
     "pagerduty-account": "bfknzixqsa",
     "pagerduty-api-key":"D8UTgHEvxYkewgz_BpB6",
     "pagerduty-account-2": "bfknzixqsa2",
-    "pagerduty-api-key-2":"P6Piu_2sAbaRcZ6gs6Gs"
+    "pagerduty-api-key-2":"P6Piu_2sAbaRcZ6gs6Gs",
+    "test-tiam-id" : "test",
+    "test-tiam-secret" : "72heYpy2weRih8I3KTxdMVOy90bBpQB0WDY3fH2IixOaAtwnRU"
 }

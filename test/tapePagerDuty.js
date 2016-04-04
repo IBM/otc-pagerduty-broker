@@ -44,6 +44,8 @@ var mockToolchainId = "c234adsf-111";
 var serviceInstanceUrlPrefix = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/';
 var serviceInstanceUrl = serviceInstanceUrlPrefix + mockServiceInstanceId;
 
+var tiamCredentials = {};
+
 var header = {};
 var authenticationTokens = [];
 var mockUserArray = [];
@@ -147,6 +149,37 @@ test_(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
    			t.fail(err);
    		}
 	});
+});
+
+test(++testId + ' PagerDuty Broker - Create Test TIAM Creds', function(t) {
+	t.plan(3);
+	var tiamHeader = {};
+	tiamHeader.Authorization = "Basic " + new Buffer(nconf.get("test-tiam-id") + ":" + nconf.get("test-tiam-secret")).toString('base64');
+	// Create a service credentials
+	var url = nconf.get("TIAM_URL") + '/service/manage/pagerduty/' + mockServiceInstanceId;
+	//t.comment(url);
+    postRequest(url, {header: tiamHeader})
+	    .then(function(result) {
+	    	t.notEqual(result.body.service_credentials, undefined, "service credentials created ?");
+	    	tiamCredentials.service_credentials = result.body.service_credentials;
+	    });        		
+    
+    // Create a toolchain credentials
+    url = url + "/" + mockToolchainId;
+    postRequest(url, {header: tiamHeader})
+    .then(function(result) {
+    	t.notEqual(result.body.toolchain_credentials, undefined, "toolchain credentials created ?");
+    	tiamCredentials.toolchain_credentials = result.body.toolchain_credentials;
+    });        		
+    
+    // Create an target_credentials credentials to access the pagerduty serviceid and toolchain
+    url = nconf.get("TIAM_URL") + '/service/manage/credentials?target=' + mockServiceInstanceId + '&toolchain=' + mockToolchainId;
+    postRequest(url, {header: tiamHeader})
+    .then(function(result) {
+    	t.notEqual(result.body.target_credentials, undefined, "target_credentials created ?");
+    	tiamCredentials.target_credentials = result.body.target_credentials;
+    });        		
+    
 });
 
 test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', function (t) {
@@ -655,7 +688,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', func
 			// bind service instance to toolchain
 		    putRequest(toolchainUrl, {header: header}).then(function(resultsFromBind) {
 		        t.equal(resultsFromBind.statusCode, 400, 'did the bind instance w/o toolchain_credentials failed?');
-			    putRequest(toolchainUrl, {header: header, body: JSON.stringify({toolchain_credentials: 'toolchainCreds'})}).then(function(resultsFromBind) {
+			    putRequest(toolchainUrl, {header: header, body: JSON.stringify({toolchain_credentials: tiamCredentials.toolchain_credentials})}).then(function(resultsFromBind) {
 			        t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
 			        //t.comment(JSON.stringify(resultsFromBind));
 			        if (_.isString(resultsFromBind.body.toolchain_lifecycle_webhook_url)) {
@@ -678,7 +711,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind unknown instance to unknown 
     t.plan(1);
 
     var toolchainUrl = serviceInstanceUrlPrefix + 'unknow_service/toolchains/unknow_toolchain';
-    putRequest(toolchainUrl, {header: header, body: JSON.stringify({toolchain_credentials: 'toolchainCreds'})}).then(function(resultsFromBind) {
+    putRequest(toolchainUrl, {header: header, body: JSON.stringify({toolchain_credentials: tiamCredentials.toolchain_credentials})}).then(function(resultsFromBind) {
         t.equal(resultsFromBind.statusCode, 404, 'did the bind instance to toolchain call fail?');
     });
 
@@ -696,10 +729,9 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD start
 	message_store_pipeline_event.toolchain_id = mockToolchainId;
 	message_store_pipeline_event.instance_id = mockServiceInstanceId;
 	
-	// Temp - Use Bearer for now until full security model adoption
-	var bearerHeader = {Authorization: authenticationTokens[0]};
+	var basicHeader = {Authorization: "Basic " + tiamCredentials.target_credentials};
 
-	postRequest(messagingEndpoint, {header: bearerHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
+	postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
     });	
 	
@@ -716,10 +748,9 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD finis
 	message_store_pipeline_event.toolchain_id = mockToolchainId;
 	message_store_pipeline_event.instance_id = mockServiceInstanceId;
 	
-	// Temp - Use Bearer for now until full security model adoption
-	var bearerHeader = {Authorization: authenticationTokens[0]};
+	var basicHeader = {Authorization: "Basic " + tiamCredentials.target_credentials};
 
-    postRequest(messagingEndpoint, {header: bearerHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
+    postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
     });	
 	
@@ -737,10 +768,9 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Unknown 
 	message_store_pipeline_event.instance_id = mockServiceInstanceId;
 	message_store_pipeline_event.service_id = 'unknown';
 	
-	// Temp - Use Bearer for now until full security model adoption
-	var bearerHeader = {Authorization: authenticationTokens[0]};
+	var basicHeader = {Authorization: "Basic " + tiamCredentials.target_credentials};
 
-    postRequest(messagingEndpoint, {header: bearerHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
+    postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
     });	
 	
@@ -749,12 +779,11 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Unknown 
 test_(++testId + ' PagerDuty Broker - Test Toolchain Lifecycle Like Event', function (t) {
 	t.plan(1);
 	
-	// Temp - Use Bearer for now until full security model adoption
-	var bearerHeader = {Authorization: authenticationTokens[0]};
+	var basicHeader = {Authorization: "Basic " + tiamCredentials.target_credentials};
 
 	var lifecycle_event = {"description" : "this a toolchain lifecycle event"};
 	// Simulate a Toolchain Lifecycle event
-    postRequest(event_endpoints.toolchain_lifecycle_webhook_url, {header: bearerHeader, body: JSON.stringify(lifecycle_event)}).then(function(resultFromPost) {
+    postRequest(event_endpoints.toolchain_lifecycle_webhook_url, {header: basicHeader, body: JSON.stringify(lifecycle_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the toolchain lifecycle event sending call succeed?');
     });	
 	
@@ -794,7 +823,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 		},
 		function(callback) {
 			// bind service instance to toolchain
-		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header, body: JSON.stringify({toolchain_credentials: 'toolchainCreds'})}).then(function(resultsFromBind) {
+		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header, body: JSON.stringify({toolchain_credentials: tiamCredentials.toolchain_credentials})}).then(function(resultsFromBind) {
                 t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
 		        callback();
 		    });    
@@ -838,7 +867,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 		},
 		function(callback) {
 			// bind service instance to toolchain
-		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header, body: JSON.stringify({toolchain_credentials: 'toolchainCreds'})}).then(function(resultsFromBind) {
+		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header, body: JSON.stringify({toolchain_credentials: tiamCredentials.toolchain_credentials})}).then(function(resultsFromBind) {
                 t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
 		        callback();
 		    });    
@@ -864,6 +893,30 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 		}
 	});
 });
+
+test(++testId + ' PagerDuty Broker - Delete Test TIAM Creds', function(t) {
+	t.plan(2);
+	var tiamHeader = {};
+	tiamHeader.Authorization = "Basic " + new Buffer(nconf.get("test-tiam-id") + ":" + nconf.get("test-tiam-secret")).toString('base64');
+	
+    // Delete a toolchain credentials
+    var url = nconf.get("TIAM_URL") + '/service/manage/slack/' + mockServiceInstanceId + "/" + mockToolchainId;
+    delRequest(url, {header: tiamHeader})
+    .then(function(result) {
+    	t.equal(result.statusCode, 204, "toolchain credentials deleted ?");
+    	tiamCredentials.toolchain_credentials = null;
+    });        		
+	// Delete a service credentials
+	url = nconf.get("TIAM_URL") + '/service/manage/pagerduty/' + mockServiceInstanceId;
+    delRequest(url, {header: tiamHeader})
+	    .then(function(result) {
+	    	t.equal(result.statusCode, 204, "service credentials deleted ?");
+	    	tiamCredentials.service_credentials = null;
+	    });        		
+});
+
+
+
 
 // Monitoring endpoints
 test_(++testId + ' PagerDuty Broker - Test GET status', function (t) {
@@ -1103,7 +1156,7 @@ function getNewInstanceBody(pagerduty) {
     body.service_id = 'pagerduty';
     body.organization_guid = nconf.get('test_app_org_guid');
     body.parameters = getPostServiceInstanceParameters(pagerduty);
-    body.service_credentials = 'servicecreds';
+    body.service_credentials = tiamCredentials.service_credentials;
 	return body;
 }
 
