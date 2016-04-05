@@ -33,17 +33,18 @@ if (enableNewRelic == 'true') {
 
 var
  async = require("async"),
- express = require("express"),
- nconf = require("nconf"),
- util = require("util"),
- nano = require("nano"),
- _ = require("underscore"),
- nanoDocUpdater = require("nano-doc-updater"),
  bodyParser = require("body-parser"),
+ express = require("express"),
  fetchAuth = require("./lib/middleware/fetch-auth"),
+ https = require('https'),
  HttpsAgent = require("agentkeepalive").HttpsAgent,
+ nano = require("nano"),
+ nanoDocUpdater = require("nano-doc-updater"),
+ nconf = require("nconf"),
  path = require("path"),
- url = require("url")
+ url = require("url"),
+ util = require("util"),
+ _ = require("underscore")
 ;
 
 // Swagger (temporary until within pipeline stage/job)
@@ -124,6 +125,9 @@ function configureAppSync(db) {
 	var logPrefix = "[" + logBasePath + ".configureAppSync] ";
 	var app = express();
 
+	// enable connection pooling
+	https.globalAgent.keepAlive = true;
+	
 	app
 	// If a request comes in that appears to be http, reject it.
 	.use(function (req, res, next) {
