@@ -783,6 +783,8 @@ test_(++testId + ' PagerDuty Broker - Test Toolchain Lifecycle Like Event', func
 
 	var lifecycle_event = {"description" : "this a toolchain lifecycle event"};
 	// Simulate a Toolchain Lifecycle event
+	t.comment("event_endpoints="+JSON.stringify(event_endpoints));
+	t.comment("basicHeader=" + JSON.stringify(basicHeader));
     postRequest(event_endpoints.toolchain_lifecycle_webhook_url, {header: basicHeader, body: JSON.stringify(lifecycle_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the toolchain lifecycle event sending call succeed?');
     });	
