@@ -673,6 +673,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', func
     t.plan(4);
 
     var toolchainUrl = serviceInstanceUrl + '/toolchains/'+ mockToolchainId;
+	t.comment("serviceInstanceUrl="+ serviceInstanceUrl);
 	async.series([
 		function(callback) {
 			// create service instance
