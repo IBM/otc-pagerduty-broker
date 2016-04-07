@@ -37,7 +37,7 @@ var defaultHeaders = {
     'Content-Type': 'application/json'
 };
 
-var event_endpoints = {};
+//var event_endpoints = {};
 
 var mockServiceInstanceId = "1234";
 var mockToolchainId = "c234adsf-111";
@@ -670,10 +670,9 @@ test_(++testId + ' PagerDuty Broker - Test PATCH unknown instance', function (t)
 
 // Bind tests
 test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', function (t) {
-    t.plan(4);
+    t.plan(3);
 
     var toolchainUrl = serviceInstanceUrl + '/toolchains/'+ mockToolchainId;
-	t.comment("serviceInstanceUrl="+ serviceInstanceUrl);
 	async.series([
 		function(callback) {
 			// create service instance
@@ -690,15 +689,15 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', func
 		    putRequest(toolchainUrl, {header: header}).then(function(resultsFromBind) {
 		        t.equal(resultsFromBind.statusCode, 400, 'did the bind instance w/o toolchain_credentials failed?');
 			    putRequest(toolchainUrl, {header: header, body: JSON.stringify({toolchain_credentials: tiamCredentials.toolchain_credentials})}).then(function(resultsFromBind) {
-			        t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
+			        t.equal(resultsFromBind.statusCode, 204, 'did the bind instance to toolchain call succeed?');
 			        //t.comment(JSON.stringify(resultsFromBind));
-			        if (_.isString(resultsFromBind.body.toolchain_lifecycle_webhook_url)) {
-			            t.ok(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'did the toolchain_lifecycle_webhook_url value returned and valid ?');
-			            t.comment("resultsFromBind="+ JSON.stringify(resultsFromBind));
-			            event_endpoints.toolchain_lifecycle_webhook_url = resultsFromBind.body.toolchain_lifecycle_webhook_url;
-			        } else {
-			            t.notOk(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'is not a valid returned url for toolchain_lifecycle_webhook_url ?');            	
-			        }
+//			        if (_.isString(resultsFromBind.body.toolchain_lifecycle_webhook_url)) {
+//			            t.ok(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'did the toolchain_lifecycle_webhook_url value returned and valid ?');
+//			            t.comment("resultsFromBind="+ JSON.stringify(resultsFromBind));
+//			            event_endpoints.toolchain_lifecycle_webhook_url = resultsFromBind.body.toolchain_lifecycle_webhook_url;
+//			        } else {
+//			            t.notOk(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'is not a valid returned url for toolchain_lifecycle_webhook_url ?');            	
+//			        }
 			    });
 		    });
 		}
@@ -778,18 +777,40 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Unknown 
 	
 });
 
-test_(++testId + ' PagerDuty Broker - Test Toolchain Lifecycle Like Event', function (t) {
-	t.plan(1);
+test(++testId + ' PagerDuty Broker - Test Toolchain Lifecycle Events', function (t) {
+	
+	var events = [
+	    require("./event_otc_broker_1_provisionning"),
+	    require("./event_otc_broker_2_configuring"),
+	    require("./event_otc_broker_3_configured"),	    
+	    require("./event_otc_broker_4_unbind")	    
+	];
+	
+	t.plan(events.length);
+	
+	var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
 	
 	var basicHeader = {Authorization: "Basic " + tiamCredentials.target_credentials};
-
-	var lifecycle_event = {"description" : "this a toolchain lifecycle event"};
-	// Simulate a Toolchain Lifecycle event
-	t.comment("event_endpoints="+JSON.stringify(event_endpoints));
-	t.comment("basicHeader=" + JSON.stringify(basicHeader));
-    postRequest(event_endpoints.toolchain_lifecycle_webhook_url, {header: basicHeader, body: JSON.stringify(lifecycle_event)}).then(function(resultFromPost) {
-        t.equal(resultFromPost.statusCode, 204, 'did the toolchain lifecycle event sending call succeed?');
-    });	
+	
+	async.forEachOfSeries(events, function(event, index, callback) {
+		event.toolchain_id = mockToolchainId;
+		event.instance_id = mockServiceInstanceId;
+		// authorization will be removed from LMS message in near future
+		event.authorization = authenticationTokens[0];
+		//
+	    postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(event)})
+        .then(function(resultFromPost) {
+            t.equal(resultFromPost.statusCode, 204, 'did the toolchain lifecycle event ' + index + ' sending call succeed?');
+            // TODO: use a real failing message and ensure we get an alert on PagerDuty
+            
+            callback();
+        });			
+	}, function(err) {
+   		if (err) {
+    		t.comment(err);
+   			t.fail(err);
+   		}
+	});
 	
 });
 
@@ -828,7 +849,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 		function(callback) {
 			// bind service instance to toolchain
 		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header, body: JSON.stringify({toolchain_credentials: tiamCredentials.toolchain_credentials})}).then(function(resultsFromBind) {
-                t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
+                t.equal(resultsFromBind.statusCode, 204, 'did the bind instance to toolchain call succeed?');
 		        callback();
 		    });    
 		},
@@ -872,7 +893,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 		function(callback) {
 			// bind service instance to toolchain
 		    putRequest(serviceInstanceUrl + '/toolchains/'+ mockToolchainId, {header: header, body: JSON.stringify({toolchain_credentials: tiamCredentials.toolchain_credentials})}).then(function(resultsFromBind) {
-                t.equal(resultsFromBind.statusCode, 200, 'did the bind instance to toolchain call succeed?');
+                t.equal(resultsFromBind.statusCode, 204, 'did the bind instance to toolchain call succeed?');
 		        callback();
 		    });    
 		},
