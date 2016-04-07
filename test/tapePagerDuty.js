@@ -693,6 +693,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', func
 			        //t.comment(JSON.stringify(resultsFromBind));
 			        if (_.isString(resultsFromBind.body.toolchain_lifecycle_webhook_url)) {
 			            t.ok(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'did the toolchain_lifecycle_webhook_url value returned and valid ?');
+			            t.comment("resultsFromBind="+ JSON.stringify(resultsFromBind));
 			            event_endpoints.toolchain_lifecycle_webhook_url = resultsFromBind.body.toolchain_lifecycle_webhook_url;
 			        } else {
 			            t.notOk(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'is not a valid returned url for toolchain_lifecycle_webhook_url ?');            	
