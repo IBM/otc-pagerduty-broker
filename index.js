@@ -164,28 +164,28 @@ function configureAppSync(db) {
 		next();
 	})
 
-	.get("/pagerduty-broker", function (req, res/*, next*/) {
-		db.view("pagerduty", "service_instances", function (err, r) {
-			var page = "" +
-			"<!-- DOCTYPE: html -->\n" +
-			"<html><head><title>PagerDuty Service</title></head><body>" +
-			"<p>This is a broker for PagerDuty</p>" +
-			"<table border='1'>"+
-			"<tr><th>Service Instance Id</th><th>Parameters</th><th>Toolchain</th></tr>"+
-			_.pluck(r.rows, "value").map(function (serviceInstance) {
-				return "" +
-				"<tr>" +
-				"<td>" +  serviceInstance._id + "</td>" +
-				"<td><pre>" +  JSON.stringify(serviceInstance.parameters, null, " ") + "</pre></td>" +
-				"<td>" +  serviceInstance.toolchain_ids.join(",") + "</td>" +
-				"</tr>";
-			}).join("") +
-			"</table>" +
-			"</body></html>";
-
-			return res.send(page);
-		});
-	})
+//	.get("/pagerduty-broker", function (req, res/*, next*/) {
+//		db.view("pagerduty", "service_instances", function (err, r) {
+//			var page = "" +
+//			"<!-- DOCTYPE: html -->\n" +
+//			"<html><head><title>PagerDuty Service</title></head><body>" +
+//			"<p>This is a broker for PagerDuty</p>" +
+//			"<table border='1'>"+
+//			"<tr><th>Service Instance Id</th><th>Parameters</th><th>Toolchain</th></tr>"+
+//			_.pluck(r.rows, "value").map(function (serviceInstance) {
+//				return "" +
+//				"<tr>" +
+//				"<td>" +  serviceInstance._id + "</td>" +
+//				"<td><pre>" +  JSON.stringify(serviceInstance.parameters, null, " ") + "</pre></td>" +
+//				"<td>" +  serviceInstance.toolchain_ids.join(",") + "</td>" +
+//				"</tr>";
+//			}).join("") +
+//			"</table>" +
+//			"</body></html>";
+//
+//			return res.send(page);
+//		});
+//	})
 
 	// OTC lifecycle operations (i.e. provision, bind, unprovision, unbind)
 	.use("/pagerduty-broker/api/v1/service_instances", require("./lib/middleware/service_instances"))
