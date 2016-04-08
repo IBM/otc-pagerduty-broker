@@ -734,6 +734,7 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD start
 
 	postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
+        // TODO: ensure we get an alert on PagerDuty
     });	
 	
 });
@@ -753,6 +754,7 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD finis
 
     postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
+        // TODO: ensure we get an alert on PagerDuty
     });	
 	
 });
@@ -774,43 +776,6 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Unknown 
     postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
     });	
-	
-});
-
-test(++testId + ' PagerDuty Broker - Test Toolchain Lifecycle Events', function (t) {
-	
-	var events = [
-	    require("./event_otc_broker_1_provisionning"),
-	    require("./event_otc_broker_2_configuring"),
-	    require("./event_otc_broker_3_configured"),	    
-	    require("./event_otc_broker_4_unbind")	    
-	];
-	
-	t.plan(events.length);
-	
-	var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
-	
-	var basicHeader = {Authorization: "Basic " + tiamCredentials.target_credentials};
-	
-	async.forEachOfSeries(events, function(event, index, callback) {
-		event.toolchain_id = mockToolchainId;
-		event.instance_id = mockServiceInstanceId;
-		// authorization will be removed from LMS message in near future
-		event.authorization = authenticationTokens[0];
-		//
-	    postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(event)})
-        .then(function(resultFromPost) {
-            t.equal(resultFromPost.statusCode, 204, 'did the toolchain lifecycle event ' + index + ' sending call succeed?');
-            // TODO: use a real failing message and ensure we get an alert on PagerDuty
-            
-            callback();
-        });			
-	}, function(err) {
-   		if (err) {
-    		t.comment(err);
-   			t.fail(err);
-   		}
-	});
 	
 });
 
