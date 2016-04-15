@@ -719,40 +719,20 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind unknown instance to unknown 
 });
 
 // Events tests
-test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD start failed', function (t) {
+test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Deploy job failed', function (t) {
 	t.plan(1);
 	
 	// Message Store Event endpoint
 	var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
 
 	// Simulate a Pipeline event
-	var message_store_pipeline_event = require("./active_deploy_start_job_failed");
+	var message_store_pipeline_event = require("./deploy_job_failure");
 	message_store_pipeline_event.toolchain_id = mockToolchainId;
 	message_store_pipeline_event.instance_id = mockServiceInstanceId;
 	
 	var basicHeader = {Authorization: "Basic " + tiamCredentials.target_credentials};
 
 	postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
-        t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
-        // TODO: ensure we get an alert on PagerDuty
-    });	
-	
-});
-
-test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - AD finish failed', function (t) {
-	t.plan(1);
-	
-	// Message Store Event endpoint
-	var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
-
-	// Simulate a Pipeline event
-	var message_store_pipeline_event = require("./active_deploy_finish_job_failed");
-	message_store_pipeline_event.toolchain_id = mockToolchainId;
-	message_store_pipeline_event.instance_id = mockServiceInstanceId;
-	
-	var basicHeader = {Authorization: "Basic " + tiamCredentials.target_credentials};
-
-    postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
         t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
         // TODO: ensure we get an alert on PagerDuty
     });	
@@ -766,7 +746,7 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Unknown 
 	var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
 
 	// Simulate a Pipeline event
-	var message_store_pipeline_event = require("./active_deploy_start_job_failed");
+	var message_store_pipeline_event = require("./deploy_job_failure");
 	message_store_pipeline_event.toolchain_id = mockToolchainId;
 	message_store_pipeline_event.instance_id = mockServiceInstanceId;
 	message_store_pipeline_event.service_id = 'unknown';

@@ -81,14 +81,10 @@ test('PagerDuty Broker - Test Incident Trigger', function (t) {
     t.plan(2);
     
 	// Simulate a Pipeline event
-	var message_store_pipeline_event = require("./active_deploy_start_job_failed");
+	var message_store_pipeline_event = require("./deploy_job_failure");
 
-	//message_store_pipeline_event = require("./active_deploy_finish_job_failed");
-	
 	message_store_pipeline_event.toolchain_id = "32a821a2-2012-4c6e-972f-b296512017e7";
 	message_store_pipeline_event.payload.pipeline.id = "1ebdf839-b269-463d-acce-9f73bf6221ce";
-	
-	//message_store_pipeline_event = require("./active_deploy_job_completed_successfull");
 	
 	var service_key = "9c2d805e49484cc8aa530a9859567239";
 	
