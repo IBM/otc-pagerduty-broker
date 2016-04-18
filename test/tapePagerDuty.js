@@ -12,7 +12,6 @@ var nconf = require('nconf'),
     Q = require('q'),
     request = require("request"),
     async = require("async"),
-    tiamUtils = require('./tiamTestUtils.js'),
     test = require('tape-catch'),
     _ = require('underscore')
 ;
