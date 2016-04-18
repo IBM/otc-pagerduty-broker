@@ -47,8 +47,6 @@ var serviceInstanceUrl = serviceInstanceUrlPrefix + mockServiceInstanceId;
 var tiamCredentials = {};
 
 var header = {};
-var authenticationTokens = [];
-var mockUserArray = [];
 
 var currentTime = new Date().valueOf();
 
@@ -86,25 +84,6 @@ function test_(name, testCode) {
 		t.end();
 	});
 }
-
-test_(++testId + ' PagerDuty Broker - Test Setup', function (t) {
-	mockUserArray = nconf.get('userArray');
-	t.plan(mockUserArray.length * 2);
-
-    for(var i = 0; i < mockUserArray.length; i++) (function(i) {
-        tiamUtils.authenticateTestUserWithTIAM (function(accessToken) {
-            tiamUtils.getProfile (accessToken, function(err, profile) {
-                t.equal(err, null, 'Was authenticate test user with TIAM successful?');
-                authenticationTokens[i] = accessToken;
-                if(typeof authenticationTokens[0] !== 'undefined' && i === 0) {
-                    header.Authorization = authenticationTokens[0];
-                }
-                t.pass('Authentication succeeded for mock user: ' + mockUserArray[i].testusername);
-            });
-        }, i);
-    } (i));
-});
-
 
 //Authentication testing
 test_(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
