@@ -206,7 +206,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
            body.parameters.site_name = "wrong" + body.parameters.site_name; 
            putServiceInstance(serviceInstanceUrl, header, body, function(results) {
                t.equal(results.statusCode, 400, 'did the put instance with wrong site_name failed?');
-               t.equal(results.body.description, "Account Not Found", 'was the correct description returned?');
+               t.equal(results.body.description, "Unknown site_name: " + body.parameters.site_name, 'was the correct description returned?');
                callback();
            });    	   
        },
