@@ -161,7 +161,7 @@ test(++testId + ' PagerDuty Broker - Create Test TIAM Creds', function(t) {
 });
 
 test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', function (t) {
-    t.plan(6);
+    t.plan(10);
 
     var body = {};
     
@@ -174,7 +174,16 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
             });
        },
        function (callback) {
+    	   // no service_credentials
+           body.service_id = 'pagerduty';
+           putServiceInstance(serviceInstanceUrl, header, body, function(resultNoOrg) {
+                t.equal(resultNoOrg.statusCode, 400, 'did the put instance call with no organization_guid fail?');
+                callback();
+           });    	   
+       }, 
+       function (callback) {
     	   // no organization_guid
+		   body.service_credentials = tiamCredentials.service_credentials;
            body.service_id = 'pagerduty';
            putServiceInstance(serviceInstanceUrl, header, body, function(resultNoOrg) {
                 t.equal(resultNoOrg.statusCode, 400, 'did the put instance call with no organization_guid fail?');
@@ -197,6 +206,17 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
            body.parameters.account_id = "wrong" + body.parameters.account_id; 
            putServiceInstance(serviceInstanceUrl, header, body, function(results) {
                t.equal(results.statusCode, 400, 'did the put instance with wrong account_id failed?');
+               t.equal(results.body.description, "Account Not Found", 'was the correct description returned?');
+               callback();
+           });    	   
+       },
+       function (callback) {
+    	   // wrong account_id (email address case)
+           body.parameters = getPostServiceInstanceParameters(getTestPagerDutyInfo());
+           body.parameters.account_id = "user@email.com"; 
+           putServiceInstance(serviceInstanceUrl, header, body, function(results) {
+               t.equal(results.statusCode, 400, 'did the put instance with wrong account_id (email address case) failed?');
+               t.equal(results.body.description, "Invalid account_id: " + body.parameters.account_id, 'was the correct description returned?');
                callback();
            });    	   
        },
@@ -480,7 +500,7 @@ test_(++testId + ' PagerDuty Broker - Test PATCH wrong api_key', function (t) {
 });
 
 test_(++testId + ' PagerDuty Broker - Test PATCH with invalid account_id', function (t) {
-    t.plan(3);
+    t.plan(5);
 	
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
     var pagerduty = getTestPagerDutyInfo();
@@ -497,6 +517,20 @@ test_(++testId + ' PagerDuty Broker - Test PATCH with invalid account_id', funct
 			// patch with invalid account_id
 		    var body = {};
 		    var newAccountId = "http://ibm.com";
+		    body.parameters = {
+		    	"account_id": newAccountId
+		    };
+		    
+		    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(resultFromPatch) {
+		        t.equal(resultFromPatch.statusCode, 400, 'did the patch instance call return a bad request?');
+		        t.equal(resultFromPatch.body.description, "Invalid account_id: " + newAccountId, 'is the bad request message correct?');
+		        callback();
+		    });    				
+		},
+		function(callback) {
+			// patch with invalid account_id (email address case)
+		    var body = {};
+		    var newAccountId = "user@email.com";
 		    body.parameters = {
 		    	"account_id": newAccountId
 		    };
