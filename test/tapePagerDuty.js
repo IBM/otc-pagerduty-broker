@@ -49,10 +49,10 @@ var header = {};
 
 var currentTime = new Date().valueOf();
 
-var pagerdutyAccountId = nconf.get("pagerduty-account");
+var pagerdutySiteName = nconf.get("pagerduty-site-name");
 var pagerdutyApiKey = nconf.get("pagerduty-api-key");
 var pagerdutyDefaultHeaders = {'Authorization': 'Token token=' + pagerdutyApiKey};
-var pagerdutyApiUrl = "https://" + pagerdutyAccountId + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
+var pagerdutyApiUrl = "https://" + pagerdutySiteName + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
 
 var testId = 0;
 var testNumber = 0; // cannot use the same var as testId is incremented when the tests are read by tape, not when they are executed
@@ -201,22 +201,22 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
            });    	   
        },
        function (callback) {
-    	   // wrong account_id
+    	   // wrong site_name
            body.parameters = getPostServiceInstanceParameters(getTestPagerDutyInfo());
-           body.parameters.account_id = "wrong" + body.parameters.account_id; 
+           body.parameters.site_name = "wrong" + body.parameters.site_name; 
            putServiceInstance(serviceInstanceUrl, header, body, function(results) {
-               t.equal(results.statusCode, 400, 'did the put instance with wrong account_id failed?');
+               t.equal(results.statusCode, 400, 'did the put instance with wrong site_name failed?');
                t.equal(results.body.description, "Account Not Found", 'was the correct description returned?');
                callback();
            });    	   
        },
        function (callback) {
-    	   // wrong account_id (email address case)
+    	   // wrong site_name (email address case)
            body.parameters = getPostServiceInstanceParameters(getTestPagerDutyInfo());
-           body.parameters.account_id = "user@email.com"; 
+           body.parameters.site_name = "user@email.com"; 
            putServiceInstance(serviceInstanceUrl, header, body, function(results) {
-               t.equal(results.statusCode, 400, 'did the put instance with wrong account_id (email address case) failed?');
-               t.equal(results.body.description, "Invalid account_id: " + body.parameters.account_id, 'was the correct description returned?');
+               t.equal(results.statusCode, 400, 'did the put instance with wrong site_name (email address case) failed?');
+               t.equal(results.body.description, "Invalid site_name: " + body.parameters.site_name, 'was the correct description returned?');
                callback();
            });    	   
        },
@@ -427,7 +427,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance missing email', function
 });
 
 // Patch tests
-test_(++testId + ' PagerDuty Broker - Test PATCH update instance with account_id and api_key', function (t) {
+test_(++testId + ' PagerDuty Broker - Test PATCH update instance with site_name and api_key', function (t) {
     t.plan(20);
 	
     var pagerduty = getTestPagerDutyInfo();
@@ -442,21 +442,21 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update instance with account_id
 			});
 		},
 		function(callback) {
-			// patch account_id and api_key
+			// patch site_name and api_key
 		    var body = {};
-		    var pagerdutyAccountId2 = nconf.get("pagerduty-account-2");
+		    var pagerdutySiteName2 = nconf.get("pagerduty-site-name-2");
 		    var pagerdutyApiKey2 = nconf.get("pagerduty-api-key-2");
 		    body.parameters = {
-		    	"account_id": pagerdutyAccountId2,
+		    	"site_name": pagerdutySiteName2,
 		    	"api_key": pagerdutyApiKey2
 		    };
 		    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(resultFromPatch) {
 		        t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
-	            t.equal(resultFromPatch.body.parameters.account_id, pagerdutyAccountId2, 'did the patch instance call return the right account id?');
+	            t.equal(resultFromPatch.body.parameters.site_name, pagerdutySiteName2, 'did the patch instance call return the right site name?');
 	            t.equal(resultFromPatch.body.parameters.api_key, pagerdutyApiKey2, 'did the patch instance call return the right API key?');
-		        // check that the service is created on new account
-		        var apiUrl2 = "https://" + pagerdutyAccountId2 + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
-		        assertServiceAndUserOnAccount(apiUrl2, pagerdutyApiKey2, pagerduty, t);
+		        // check that the service is created on new site
+		        var apiUrl2 = "https://" + pagerdutySiteName2 + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
+		        assertServiceAndUserOnPagerDutySite(apiUrl2, pagerdutyApiKey2, pagerduty, t);
 		        callback();
 		    });    
 		}
@@ -499,7 +499,7 @@ test_(++testId + ' PagerDuty Broker - Test PATCH wrong api_key', function (t) {
 	});
 });
 
-test_(++testId + ' PagerDuty Broker - Test PATCH with invalid account_id', function (t) {
+test_(++testId + ' PagerDuty Broker - Test PATCH with invalid site_name', function (t) {
     t.plan(5);
 	
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
@@ -514,30 +514,30 @@ test_(++testId + ' PagerDuty Broker - Test PATCH with invalid account_id', funct
 			});
 		},
 		function(callback) {
-			// patch with invalid account_id
+			// patch with invalid site_name
 		    var body = {};
-		    var newAccountId = "http://ibm.com";
+		    var newSiteName = "http://ibm.com";
 		    body.parameters = {
-		    	"account_id": newAccountId
+		    	"site_name": newSiteName
 		    };
 		    
 		    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(resultFromPatch) {
 		        t.equal(resultFromPatch.statusCode, 400, 'did the patch instance call return a bad request?');
-		        t.equal(resultFromPatch.body.description, "Invalid account_id: " + newAccountId, 'is the bad request message correct?');
+		        t.equal(resultFromPatch.body.description, "Invalid site_name: " + newSiteName, 'is the bad request message correct?');
 		        callback();
 		    });    				
 		},
 		function(callback) {
-			// patch with invalid account_id (email address case)
+			// patch with invalid site_name (email address case)
 		    var body = {};
-		    var newAccountId = "user@email.com";
+		    var newSiteName = "user@email.com";
 		    body.parameters = {
-		    	"account_id": newAccountId
+		    	"site_name": newSiteName
 		    };
 		    
 		    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(resultFromPatch) {
 		        t.equal(resultFromPatch.statusCode, 400, 'did the patch instance call return a bad request?');
-		        t.equal(resultFromPatch.body.description, "Invalid account_id: " + newAccountId, 'is the bad request message correct?');
+		        t.equal(resultFromPatch.body.description, "Invalid site_name: " + newSiteName, 'is the bad request message correct?');
 		    });    				
 		}
 	], function(err, results) {
@@ -1071,10 +1071,10 @@ function assertDashboardAccessible(body, t) {
 }
 
 function assertService(pagerduty, t, callback) {
-	return assertServiceOnAccount(pagerdutyApiUrl, pagerdutyApiKey, pagerduty, t, callback);
+	return assertServiceOnPagerDutySite(pagerdutyApiUrl, pagerdutyApiKey, pagerduty, t, callback);
 }
 
-function assertServiceOnAccount(apiUrl, apiKey, pagerduty, t, callback) {
+function assertServiceOnPagerDutySite(apiUrl, apiKey, pagerduty, t, callback) {
 	var pagerdutyHeaders = {
 		'Authorization': 'Token token=' + apiKey
 	};
@@ -1097,11 +1097,11 @@ function assertServiceOnAccount(apiUrl, apiKey, pagerduty, t, callback) {
 
 // plan == 15 (or 10 for no phone number case)
 function assertServiceAndUser(pagerduty, t) {
-	return assertServiceAndUserOnAccount(pagerdutyApiUrl, pagerdutyApiKey, pagerduty, t);
+	return assertServiceAndUserOnPagerDutySite(pagerdutyApiUrl, pagerdutyApiKey, pagerduty, t);
 }
 
-function assertServiceAndUserOnAccount(apiUrl, apiKey, pagerduty, t) {
-	assertServiceOnAccount(apiUrl, apiKey, pagerduty, t, function(t, pagerdutyHeaders, service) {
+function assertServiceAndUserOnPagerDutySite(apiUrl, apiKey, pagerduty, t) {
+	assertServiceOnPagerDutySite(apiUrl, apiKey, pagerduty, t, function(t, pagerdutyHeaders, service) {
         var escalation_policy = service.escalation_policy;
         var userName = "Primary contact (" + pagerduty.user_email + ")";
         t.equal(escalation_policy.name, "Policy for " + pagerduty.service_name, 'was the right escalation policy created?');
@@ -1200,7 +1200,7 @@ function getPostServiceInstanceParameters(pagerduty) {
 	} else if (pagerduty.user_phone_number)
 		user_phone = pagerduty.user_phone_number;
 	var result = {
-		account_id: pagerdutyAccountId,
+		site_name: pagerdutySiteName,
 		api_key: pagerdutyApiKey,
 		service_name: pagerduty.service_name
 	};

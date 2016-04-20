@@ -15,9 +15,9 @@
     },
     "test_app_guid": "99b0fed4-9d53-4bd5-8efa-bb4237a35430",
     "test_app_org_guid": "8a5b49de-1a3c-4075-b3ec-bd25d90ae2a1",
-    "pagerduty-account": "ZVPTAc6XAi",
+    "pagerduty-site-name": "ZVPTAc6XAi",
     "pagerduty-api-key":"czJ4dAUDqeMKExYxq-SG",
-    "pagerduty-account-2": "ZVPTAc6XAi2",
+    "pagerduty-site-name-2": "ZVPTAc6XAi2",
     "pagerduty-api-key-2":"tNAkcpsMzTW9sTMEohQ4",
     "test-tiam-id" : "test",
     "test-tiam-secret" : "72heYpy2weRih8I3KTxdMVOy90bBpQB0WDY3fH2IixOaAtwnRU"

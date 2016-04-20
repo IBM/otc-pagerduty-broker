@@ -291,7 +291,7 @@
 				"parameters": {
 					"description": "JSON data providing PagerDuty context  Note: To use a existing PagerDuty service, set pagerduty_service_id attribute instead of pagerduty_service_name",
 					"type": "string",
-				    "example": "{\"account_id\": \"someId\", \"api_key\": \"xoxp-13948444357-13953293954-13959136117-xxxxxxx\",\"service_name\": \"My PagerDuty Service\"}",
+				    "example": "{\"site_name\": \"someSiteName\", \"api_key\": \"xoxp-13948444357-13953293954-13959136117-xxxxxxx\",\"service_name\": \"My PagerDuty Service\"}",
 				    "required": true
 				},
 				"service_id": {
@@ -333,7 +333,7 @@
 				"parameters": {
 					"description": "JSON data providing PagerDuty context  Note: To use a existing PagerDuty service, pagerduty_service_id attribute instead of pagerduty_service_name",
 					"type": "string",
-					"example": "{\"account_id\": \"someId\", \"api_key\": \"xoxp-13948444357-13953293954-13959136117-xxxxxxx\",\"service_name\": \"My Other PagerDuty Service\"}"
+					"example": "{\"site_name\": \"someSiteName\", \"api_key\": \"xoxp-13948444357-13953293954-13959136117-xxxxxxx\",\"service_name\": \"My Other PagerDuty Service\"}"
 				},
 				"organization_guid": {
 					"description": "The organization the service instance is associated with",
