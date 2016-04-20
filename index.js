@@ -195,8 +195,7 @@ function configureAppSync(db) {
 	// Handle errors
 	.use(function(error, req, res, next) {
 		if (error) {
-			logger.error(logPrefix + "The application request failed with the" +
-				" following error: " + error.toString());
+			logger.debug(logPrefix + "The application request failed with the following error: " + error.toString());
 
 			res.status(400).send(JSON.stringify(error, null, 3));
 		}
@@ -205,10 +204,7 @@ function configureAppSync(db) {
 		}
 	})
 	.use(function (req, res, next) {
-		logger.error(logPrefix + "Configuring application failed because route " +
-			"does not exist.");
-
-		return res.status(400).json({});
+		return res.status(400).json({description: "Route does not exist."});
 	})
 	.listen(nconf.get("PORT"), function () {
 		util.log("listening on port " + nconf.get("PORT"));
@@ -231,8 +227,7 @@ function createDb(callback) {
 
 	nanoObj.db.create(DB_NAME, function (err/*, r*/) {
 		if (err && err.error !== "file_exists") {
-			logger.error(logPrefix + "Creating the database failed with the " +
-				"following error: " + err.toString());
+			logger.error(logPrefix + "Creating the database failed with the following error: " + err.toString());
 
 			return callback("Could not create db: " + err.toString());
 		}
