@@ -4,7 +4,8 @@
 	"schemes": "http",
 	"services": {
 		"pagerduty": "https://pagerduty.com",
-		"otc-api": "https://localhost:3400/api/v1"
+		"otc_api": "https://localhost:3400/api/v1",
+		"ibm_snip_api" : "http://ibm.biz/api"
 	},
 	"_vcap_application": {
 		"application_uris":["localhost:4000"]
@@ -18,5 +19,6 @@
 	},
 	"TIAM_URL": "",
 	"TIAM_CLIENT_ID": "",
-	"OTC_API_BROKER_SECRET": ""
+	"OTC_API_BROKER_SECRET": "",
+	"IBM_SNIP_API_KEY": ""
 }
