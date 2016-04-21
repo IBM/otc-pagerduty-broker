@@ -42,6 +42,7 @@ var mockServiceInstanceId = "1234";
 var mockToolchainId = "c234adsf-111";
 var serviceInstanceUrlPrefix = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/';
 var serviceInstanceUrl = serviceInstanceUrlPrefix + mockServiceInstanceId;
+var unknownUserEmail = "unknown_user@email.com";
 
 var tiamCredentials = {};
 
@@ -427,7 +428,28 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance missing email', function
         t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
         
         // Ensure PagerDuty service and default user have been created
-        pagerduty.user_email = "unknown_user@email.com";
+        pagerduty.user_email = unknownUserEmail;
+        assertServiceAndUser(pagerduty, t);
+    });
+});
+
+test_(++testId + ' PagerDuty Broker - Test PUT instance missing email and phone number', function (t) {
+	// user email is not mandatory, if not present a default user should be used ("unknown_user@email.com")
+    t.plan(12);
+    
+    var pagerduty = getTestPagerDutyInfo();
+    delete pagerduty.user_email;
+    delete pagerduty.user_phone_country;
+    delete pagerduty.user_phone_number;
+
+    var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
+    var body = getNewInstanceBody(pagerduty);
+    putServiceInstance(serviceInstanceUrl2, header, body, function(results) {
+        t.equal(results.statusCode, 200, 'did the put instance call succeed?');
+        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+        
+        // Ensure PagerDuty service and default user have been created
+        pagerduty.user_email = unknownUserEmail;
         assertServiceAndUser(pagerduty, t);
     });
 });
@@ -1001,8 +1023,10 @@ function addServiceToDelete(serviceInstanceUrl, serviceInstanceHeaders, dashboar
 						_.forEach(targets, function(target) {
 							if (target.name == 'Primary contact (' + target.email + ')'
 									|| target.name == 'Contact (' + target.email + ')') {
-								var userUrl = apiUrl + '/users/' + target.id;
-								addToDeleteIfAbsent('user', userUrl, pagerdutyHeaders);
+								if (target.email != unknownUserEmail) { // do not delete special user
+									var userUrl = apiUrl + '/users/' + target.id;
+									addToDeleteIfAbsent('user', userUrl, pagerdutyHeaders);
+								}
 							}
 						});
 					});
