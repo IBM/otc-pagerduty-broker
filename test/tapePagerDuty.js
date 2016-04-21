@@ -414,7 +414,8 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance missing phone number', f
 });
 
 test_(++testId + ' PagerDuty Broker - Test PUT instance missing email', function (t) {
-    t.plan(1);
+	// user email is not mandatory, if not present a default user should be used ("unknown_user@email.com")
+    t.plan(18);
     
     var pagerduty = getTestPagerDutyInfo();
     delete pagerduty.user_email;
@@ -422,7 +423,12 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance missing email', function
     var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
     var body = getNewInstanceBody(pagerduty);
     putServiceInstance(serviceInstanceUrl2, header, body, function(results) {
-        t.equal(results.statusCode, 400, 'did the put instance call fail with a bad request?');
+        t.equal(results.statusCode, 200, 'did the put instance call succeed?');
+        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+        
+        // Ensure PagerDuty service and default user have been created
+        pagerduty.user_email = "unknown_user@email.com";
+        assertServiceAndUser(pagerduty, t);
     });
 });
 
