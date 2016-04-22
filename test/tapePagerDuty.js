@@ -38,6 +38,7 @@ var defaultHeaders = {
 
 //var event_endpoints = {};
 
+var organization_guid = "some uuid";
 var mockServiceInstanceId = "1234";
 var mockToolchainId = "c234adsf-111";
 var serviceInstanceUrlPrefix = nconf.get('url') + '/pagerduty-broker/api/v1/service_instances/';
@@ -91,7 +92,7 @@ test_(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
 
     var body = {
         'service_id': 'pagerduty',
-        'organization_guid': nconf.get('test_app_org_guid')
+        'organization_guid': organization_guid
     };
     var auth = {
         'Authorization': ''
@@ -193,7 +194,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
        }, 
        function (callback) {
     	   // wrong api_key
-           body.organization_guid = nconf.get('test_app_org_guid');
+           body.organization_guid = organization_guid;
            body.parameters = getPostServiceInstanceParameters(getTestPagerDutyInfo());
            body.parameters.api_key = "wrong" + body.parameters.api_key; 
            putServiceInstance(serviceInstanceUrl, header, body, function(results) {
@@ -1200,7 +1201,7 @@ function assertServiceAndUserOnPagerDutySite(apiUrl, apiKey, pagerduty, t) {
 function getNewInstanceBody(pagerduty) {
 	var body = {};
     body.service_id = 'pagerduty';
-    body.organization_guid = nconf.get('test_app_org_guid');
+    body.organization_guid = organization_guid;
     body.parameters = getPostServiceInstanceParameters(pagerduty);
     body.service_credentials = tiamCredentials.service_credentials;
 	return body;
