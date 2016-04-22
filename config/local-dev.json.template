@@ -20,5 +20,6 @@
 	"TIAM_URL": "",
 	"TIAM_CLIENT_ID": "",
 	"OTC_API_BROKER_SECRET": "",
-	"IBM_SNIP_API_KEY": ""
+	"IBM_SNIP_API_KEY": "",
+	"LOG4J_LEVEL": ""
 }

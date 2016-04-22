@@ -1,6 +1,6 @@
 {
     "levels": {
-        "pagerduty-broker": "DEBUG",
+        "otc-pagerduty-broker": "INFO",
         "request": "OFF"
     },
     "appenders": [
