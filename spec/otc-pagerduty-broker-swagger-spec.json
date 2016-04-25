@@ -15,6 +15,10 @@
 		{
 			"name": "monitoring",
 			"description": "Endpoints for monitoring. Note: The base URL for these endpoints are /."
+		},
+		{
+			"name": "messaging",
+			"description": "Endpoints for sending message to PagerDuty."
 		}
 	],
 	"schemes": [
