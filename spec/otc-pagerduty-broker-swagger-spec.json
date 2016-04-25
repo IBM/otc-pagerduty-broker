@@ -414,7 +414,7 @@
 				}
 			},
 			"required": [
-				"service_id", "instance_id, "toolchain_id"
+				"service_id", "instance_id", "toolchain_id"
 			]
 		}
 	}
