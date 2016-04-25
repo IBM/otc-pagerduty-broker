@@ -248,6 +248,48 @@
 				]
 			}
 		},
+		"/messaging/accept": {
+			"post": {
+				"tags": [
+					"messaging"
+				],
+				"summary": "Sends a message to PagerDuty",
+				"description": "Sends an event to PagerDuty. Depending on the nature of the event, an alert is sent to PagerDuty or the event is ignored.",
+				"operationId": "incomingEventFromMessageStore",
+				"produces": [
+					"application/json"
+				],
+				"parameters": [
+						"in": "body",
+			            "name": "body",
+			            "description": "Event details",
+			            "required": false,
+			            "schema": {
+			              "$ref": "#/definitions/incomingEventFromMessageStore"
+			            }
+					}				
+				],
+				"responses": {
+					"204": {
+						"description": "Successful request"
+					},
+					"401": {
+						"description": "Returned when a user is not authenticated with an auth header."
+					},
+					"403": {
+						"description": "Returned when a user makes a request to something they are not entitled to."
+					},
+					"500": {
+						"description": "Returned when error occurs while responding to the request."
+					}
+				},
+				"security": [
+					{
+						"api_key": []
+					}
+				]
+			}
+		},
 		"/version": {
 			"get": {
 				"tags": [
@@ -344,6 +386,34 @@
 			},
 			"required": [
 				"instance_id", "dashboard_url"
+			]
+		},
+		"incomingEventFromMessageStore": {
+			"properties": {
+				"service_id": {
+					"description": "The id of the source service, i.e. the service triggering the event",
+					"type": "string",
+					"example": "pipeline"
+				},
+				"instance_id": {
+					"description": "The target service",
+					"type": "string",
+					"example": "d02d20f1-e7bb-4972-8a6f-26d7b7bb993e"
+				},
+				"toolchain_id": {
+					"description": "The id of the toolchain the source and target services are bound to",
+					"type": "string",
+					"example": "d02d29f1-e7bb-4977-8a6f-26d7b7bb893e"
+				},
+				"payload": {
+					"description": "The content of the event.",
+					"type": "string",
+					"example": "{ event: jobCompleted, job: {extComponentType: Deployer} } ",
+					"required": false
+				}
+			},
+			"required": [
+				"service_id", "instance_id, "toolchain_id"
 			]
 		}
 	}
