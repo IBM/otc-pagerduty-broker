@@ -247,7 +247,6 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
     });
 });
 
-
 test_(++testId + ' PagerDuty Broker - Test PUT instance', function (t) {
     t.plan(19);
 
@@ -795,22 +794,61 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind unknown instance to unknown 
 
 // Events tests
 test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Deploy job failed', function (t) {
-	t.plan(1);
+	t.plan(8);
 	
-	// Message Store Event endpoint
-	var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
-
-	// Simulate a Pipeline event
-	var message_store_pipeline_event = require("./deploy_job_failure");
-	message_store_pipeline_event.toolchain_id = mockToolchainId;
-	message_store_pipeline_event.instance_id = mockServiceInstanceId;
-	
-	var basicHeader = {Authorization: "Basic " + tiamCredentials.target_credentials};
-
-	postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
-        t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
-        // TODO: ensure we get an alert on PagerDuty
-    });	
+	var pagerDutyServiceId;
+	var incidentNumber;
+	async.series([
+		function(callback) {
+			// create instance
+		    var pagerduty = getTestPagerDutyInfo();
+    		var body = getNewInstanceBody(pagerduty);
+			putServiceInstance(serviceInstanceUrl, header, body, function(results) {
+        		t.equal(results.statusCode, 200, 'did the put instance call succeed?');
+      			pagerDutyServiceId = results.body.instance_id;
+				callback();
+			});
+		},
+		function(callback) {
+			// bind service instance to toolchain
+		    var toolchainUrl = serviceInstanceUrl + '/toolchains/'+ mockToolchainId;
+		    putRequest(toolchainUrl, {header: header, body: JSON.stringify({toolchain_credentials: tiamCredentials.toolchain_credentials})}).then(function(resultsFromBind) {
+		        t.equal(resultsFromBind.statusCode, 204, 'did the bind instance to toolchain call succeed?');
+		        callback();
+		    });
+		},
+		function(callback) {
+			// simulate a Pipeline event
+			var messagingEndpoint = nconf.get('url') + '/pagerduty-broker/api/v1/messaging/accept';
+			var message_store_pipeline_event = require("./deploy_job_failure");
+			message_store_pipeline_event.toolchain_id = mockToolchainId;
+			message_store_pipeline_event.instance_id = mockServiceInstanceId;
+			
+			var basicHeader = {Authorization: "Basic " + tiamCredentials.target_credentials};
+			postRequest(messagingEndpoint, {header: basicHeader, body: JSON.stringify(message_store_pipeline_event)}).then(function(resultFromPost) {
+		        t.equal(resultFromPost.statusCode, 204, 'did the message store like event sending call succeed?');
+				callback();
+			});
+		},
+		function(callback) {
+			// assert incident (wait 30s max)
+	        getIncident(pagerDutyServiceId, Date.now() + 30000, function(incident, err) {
+	        	t.equal(err, undefined, 'did the calls to get the incident succeed?');
+	        	var description = incident == undefined ? undefined : incident.trigger_summary_data.description;
+	        	t.equal(description, "Job 'Deploy to prod' in Stage 'PROD' #4 of Pipeline '80f22ae7-5a63-4af4-9b14-c2be9d512177' from Toolchain 'c234adsf-111' has FAILED", 'was the incident description correct?');
+	        	incidentNumber = incident == undefined ? undefined : incident.incident_number;
+	        	callback();
+	        })
+		},
+		function(callback) {
+			// resolve incident
+	        resolveIncident(incidentNumber, getTestUserEmail(), t);
+		}
+	], function(err, results) {
+		if (err) {
+			t.fail(err);
+		}
+	});
 	
 });
 
@@ -836,11 +874,29 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Unknown 
 
 // Delete tests
 test_(++testId + ' PagerDuty Broker - Test DELETE instance', function (t) {
-    t.plan(1);
+    t.plan(2);
 
-    delRequest(serviceInstanceUrl, {header: header}).then(function(resultsFromDel) {
-		t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
-    });
+	async.series([
+		function(callback) {
+			// create service instance
+   			var body = getNewInstanceBody(getTestPagerDutyInfo());
+			putServiceInstance(serviceInstanceUrl, header, body, function(results) {
+		        t.equal(results.statusCode, 200, 'did the put instance call succeed?');
+				callback();
+			});
+		},
+		function(callback) {
+			// delete instance
+		    delRequest(serviceInstanceUrl, {header: header}).then(function(resultsFromDel) {
+				t.equal(resultsFromDel.statusCode, 204, 'did the delete instance call succeed?');
+				removeFromToDelete('service_instance', serviceInstanceUrl); // do not try to delete it again
+		    });
+    	}
+	], function(err, results) {
+		if (err) {
+			t.fail(err);
+		}
+	});
 });
 
 test_(++testId + ' PagerDuty Broker - Test DELETE unknown instance', function (t) {
@@ -1098,6 +1154,68 @@ function assertDashboardAccessible(body, t) {
 	}, function(err, reqRes, body) {
 		t.notEqual(reqRes.statusCode, 404, 'did the get dashboard url call succeed?');
 		return;
+	});
+}
+
+function getIncident(pagerdutyServiceId, timeout, callback) {
+	var pagerdutyHeaders = {
+		'Authorization': 'Token token=' + pagerdutyApiKey
+	};
+	var url = pagerdutyApiUrl + "/incidents?service=" + encodeURIComponent(pagerdutyServiceId);
+	request.get({
+		uri: url,
+		json: true,
+		headers: pagerdutyHeaders
+	}, function(err, reqRes, body) {
+        if (reqRes.statusCode != 200) {
+        	return callback(null, reqRes.statusCode);
+        }
+    	var foundIncidents = body.incidents;
+    	if (foundIncidents.length == 0) {
+    		var now = Date.now();
+    		if (now < timeout) {
+    			// wait 1s and retry
+				return setTimeout(function() {
+				    getIncident(pagerdutyServiceId, timeout, callback);
+				}, 1000);    			
+    		} else {
+    			return callback(null, "timeout");
+    		}
+    	}
+        var incident = foundIncidents[0];
+       	return callback(incident);
+	});
+}
+
+function resolveIncident(incidentNumber, userEmail, t) {
+	var pagerdutyHeaders = {
+		'Authorization': 'Token token=' + pagerdutyApiKey
+	};
+	var userUrl = pagerdutyApiUrl + "/users?query=" + encodeURIComponent(userEmail);
+	request.get({
+		uri: userUrl,
+		json: true,
+		headers: pagerdutyHeaders
+	}, function(err, reqRes, body) {
+        t.equal(reqRes.statusCode, 200, 'was the user retrieved?');
+        var userId = body.users[0].id;
+		var getIncidentUrl = pagerdutyApiUrl + "/incidents/" + encodeURIComponent(incidentNumber);
+		request.get({
+			uri: getIncidentUrl,
+			json: true,
+			headers: pagerdutyHeaders
+		}, function(err, reqRes, body) {
+			t.equal(reqRes.statusCode, 200, 'was the incident retrieved?');
+			var incidentId = body.id;
+			var resolveIncidentUrl = pagerdutyApiUrl + "/incidents/" + encodeURIComponent(incidentId) + "/resolve?requester_id=" + userId;
+			request.put({
+				uri: resolveIncidentUrl,
+				json: true,
+				headers: pagerdutyHeaders
+			}, function(err, reqRes, body) {
+				t.equal(reqRes.statusCode, 200, 'was the incident resolved?');
+			});	
+		});
 	});
 }
 
