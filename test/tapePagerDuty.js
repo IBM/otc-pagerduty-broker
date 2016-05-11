@@ -163,7 +163,7 @@ test(++testId + ' PagerDuty Broker - Create Test TIAM Creds', function(t) {
 });
 
 test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', function (t) {
-    t.plan(10);
+    t.plan(11);
 
     var body = {};
     
@@ -199,6 +199,7 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance with wrong parameters', 
            body.parameters.api_key = "wrong" + body.parameters.api_key; 
            putServiceInstance(serviceInstanceUrl, header, body, function(results) {
                t.equal(results.statusCode, 400, 'did the put instance with wrong api_key failed?');
+               t.equal(results.body.description, "Invalid api_key: " + body.parameters.api_key, 'was the correct description returned?');
                callback();
            });    	   
        },
@@ -805,7 +806,7 @@ test_(++testId + ' PagerDuty Broker - Test Messaging Store Like Event - Deploy j
     		var body = getNewInstanceBody(pagerduty);
 			putServiceInstance(serviceInstanceUrl, header, body, function(results) {
         		t.equal(results.statusCode, 200, 'did the put instance call succeed?');
-      			pagerDutyServiceId = results.body.instance_id;
+      			pagerDutyServiceId = results.body.parameters.service_id;
 				callback();
 			});
 		},
