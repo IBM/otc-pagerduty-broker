@@ -5,7 +5,8 @@
 	"services": {
 		"pagerduty": "https://pagerduty.com",
 		"otc_api": "https://localhost:3400/api/v1",
-		"ibm_snip_api" : "http://ibm.biz/api"
+		"ibm_snip_api" : "http://ibm.biz/api",
+		"otc_ui": "http://localhost:3100/devops"
 	},
 	"_vcap_application": {
 		"application_uris":["localhost:4000"]
