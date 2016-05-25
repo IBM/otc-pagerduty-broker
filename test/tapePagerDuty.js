@@ -131,7 +131,7 @@ test_(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
 	});
 });
 
-test(++testId + ' PagerDuty Broker - Create Test TIAM Creds', function(t) {
+test_(++testId + ' PagerDuty Broker - Create Test TIAM Creds', function(t) {
 	t.plan(3);
 	var tiamHeader = {};
 	tiamHeader.Authorization = "Basic " + new Buffer(nconf.get("test-tiam-id") + ":" + nconf.get("test-tiam-secret")).toString('base64');
@@ -707,40 +707,6 @@ test_(++testId + ' PagerDuty Broker - Test PATCH unknown instance', function (t)
     patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(resultFromPatch) {
         t.equal(resultFromPatch.statusCode, 404, 'did the patch instance call fail?');
     });    
-});
-
-test_(++testId + ' PagerDuty Broker - Test PATCH user_info', function (t) {
-    t.plan(2);
-	
-    var serviceInstanceUrl2 = serviceInstanceUrl + '_' + testNumber;
-    var pagerduty = getTestPagerDutyInfo();
-	async.series([
-		function(callback) {
-			// create service instance
-   			var body = getNewInstanceBody(pagerduty);
-			putServiceInstance(serviceInstanceUrl2, header, body, function(results) {
-        		t.equal(results.statusCode, 200, 'did the first put instance call succeed?');
-				callback();
-			});
-		},
-		function(callback) {
-			// patch with body.user_info
-		    var body = {};
-		    var newEmail =  "user" + testNumber + "_" + currentTime + ".updated@ibm.com";
-		    body.parameters = {
-		    	"user_email": newEmail
-		    };
-  			body.user_info = "some user info";
-		    patchRequest(serviceInstanceUrl2, {header: header, body: JSON.stringify(body)}).then(function(resultFromPatch) {
-		        t.equal(resultFromPatch.statusCode, 200, 'did the patch instance call succeed?');
-		        callback();
-		    });    
-		}
-	], function(err, results) {
-		if (err) {
-			t.fail(err);
-		}
-	});
 });
 
 // Bind tests
