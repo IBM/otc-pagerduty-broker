@@ -61,6 +61,66 @@ var testNumber = 0; // cannot use the same var as testId is incremented when the
 
 var toDelete = [];
 
+// Nock related 
+var nock;
+var nockMode = (process.env.NOCK_MODE!==undefined)?JSON.parse(process.env.NOCK_MODE.toLowerCase()):false;
+
+// To be fully operational, recordMode is only valid if nockMode is enabled
+// in order to capture all the server side request to mock/nock
+var nockRecordMode = false && 
+					 nockMode;
+var server;
+
+test('PagerDuty Broker - Setup', function(t) {
+	if (nockMode) {
+		nock = require("nock");
+
+		if (nockRecordMode) {
+			nock.recorder.rec({dont_print: true, output_objects: true});				
+		} else {
+			t.comment("Doing Nock mode ops");
+			var url =  require("url");
+			// Configure Nock endpoints
+			// TIAM Nocks scope is replaced by the expected tiam url (host) in the test configuration
+			var tiamUrl = url.parse(nconf.get("TIAM_URL"));
+			var nockDefs = nock.loadDefs(__dirname + "/nocks/tiamNocks.json");
+			nockDefs.forEach(function(def) {
+			  def.scope = tiamUrl.protocol + "//" + tiamUrl.host;
+			});	
+			nocks = nock.define(nockDefs);
+			nocks.forEach(function(aNock) {
+				// Add Path filtering for mockServiceInstanceId
+				aNock.filteringPath(function(path) {
+					//console.log(path);
+					return path.replace(mockServiceInstanceId, "tape00000000000000");
+	            });
+				aNock.persist();
+				//aNock.log(console.log);
+			});
+		}
+	
+		// Start the server
+	    t.plan(2);
+	    var app = require('../app');
+	    app.configureMiddleware(function(err) {
+	        if (!err) {
+	            server = app.server.listen(nconf.get('PORT'), 'localhost', function(err) {
+	                if (err) {
+	                    t.fail('server didnt start listening: ' + JSON.stringify(err));
+	                    return;
+	                }
+	                t.pass('server started listening on port ' + nconf.get('PORT'));
+	            });
+	        }
+	        t.notOk(err, 'Did the server start without an error?');
+	    });		
+	} else {
+	    t.plan(1);
+	    t.pass("Setup done");
+		t.end();		
+	}
+});
+
 function setup(t) {
     testNumber++;
 }
@@ -1009,6 +1069,52 @@ test_(++testId + ' PagerDuty Broker - Test GET version', function (t) {
             t.equal(results.statusCode, 200, 'did the get version call succeed?');
         }
     });
+});
+
+test('PagerDuty Broker - Teardown', function(t) {
+	if (nockMode) {
+		if (nockRecordMode) {
+			// Nock Record related work
+			var nockCalls = nock.recorder.play();
+			
+			const fs = require('fs'); 
+			fs.writeFileSync(__dirname + '/nocks/allNocks.json', JSON.stringify(nockCalls));
+			
+			// Keep a single nock instance by removing the headers.date property and call uniq
+			nockCalls = _.uniq(nockCalls, false, function(nockCall) {
+				// return a unique id for each object
+				return nockCall.method + " " + nockCall.scope + nockCall.path + " " + nockCall.status;
+			})
+			
+			// Change the path in scope to a generic Slack service instance id to 
+			// ease the filter mechanism
+			nockCalls = _.map(nockCalls, function(nockCall) {
+				nockCall.path = nockCall.path.replace(mockServiceInstanceId, "tape00000000000000");
+				return nockCall;
+			});
+			
+			var url =  require("url");
+			var tiamUrl = url.parse(nconf.get("TIAM_URL"));
+			// Only keep tiam ones
+			var tiamNocks = _.filter(nockCalls, function(nockCall) {
+				var nockScopeUrl = url.parse(nockCall.scope); 
+				return tiamUrl.hostname == nockScopeUrl.hostname;
+			});
+			fs.writeFileSync(__dirname + '/nocks/tiamNocks.json', JSON.stringify(tiamNocks));
+		}
+		
+		
+	    t.plan(1);
+		t.comment("Doing Nock mode ops");
+	    server.close(function(err) {
+	        t.notOk(err, 'did the server close?');
+	        t.end();
+	        process.exit();
+	    });
+
+	} else {
+		t.end();
+	}
 });
 
 // Utility functions

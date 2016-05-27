@@ -21,6 +21,7 @@
     "underscore": "1.8.3"
   },
   "devDependencies": {
+    "nock": "5.2.1",
     "q": "^1.4.1",
     "tap-spec": "^3.0.0",
     "tap-xunit": "^1.1.1",
