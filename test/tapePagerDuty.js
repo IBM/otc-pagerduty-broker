@@ -70,8 +70,10 @@ var nockMode = (process.env.NOCK_MODE!==undefined)?JSON.parse(process.env.NOCK_M
 var nockRecordMode = false && 
 					 nockMode;
 var server;
+console.log('Before setup');
 
 test('PagerDuty Broker - Setup', function(t) {
+console.log('In setup');
 	if (nockMode) {
 		nock = require("nock");
 
