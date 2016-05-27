@@ -12,7 +12,7 @@ var nconf = require('nconf'),
     Q = require('q'),
     request = require("request"),
     async = require("async"),
-    test = require('tape-catch'),
+    test = require('tape'),
     _ = require('underscore')
 ;
 
