@@ -14,6 +14,9 @@ var nconf = require("nconf"),
 	log4js = require("log4js"),
  	util = require('util');
 
+//Configuration for nconf
+populateNconfSync();
+
 //Configuration for logging
 log4js.configure("./config/log4js.json", {
     reloadSecs: 30
@@ -22,9 +25,11 @@ log4js.configure("./config/log4js.json", {
 var logger = log4js.getLogger("otc-pagerduty-broker"),
  	logBasePath = "index";
 
-//Configuration for nconf
-populateNconfSync();
-
+// check if log level has not been overridden
+var level = nconf.get("LOG4J_LEVEL");
+if (level && level.length > 0)
+	logger.setLevel(level);
+	
 /******************** End Synchronous App Configuration ***********************/
 
 /************* Begin Application Performance Monitoring config ****************/

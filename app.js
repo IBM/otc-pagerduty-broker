@@ -29,11 +29,6 @@ var swaggerUiMiddleware = require("swagger-ui-middleware"),
 otcPagerDutyBrokerSwaggerSpecFile = path.join(__dirname, "/spec", "otc-pagerduty-broker-swagger-spec.json"),
 otcPagerDutyBrokerSwaggerSpec = require(otcPagerDutyBrokerSwaggerSpecFile);
 
-//Configuration for logging
-log4js.configure("./config/log4js.json", {
-    reloadSecs: 30
-});
-
 var logger = log4js.getLogger("otc-pagerduty-broker"),
  	logBasePath = "index";
 
@@ -94,11 +89,6 @@ function validateConfSync() {
 }
 
 function configureAppSync(db) {
-	// check if log level has not been overridden
-	var level = nconf.get("LOG4J_LEVEL");
-	if (level && level.length > 0)
-		logger.setLevel(level);
-	
 	var logPrefix = "[" + logBasePath + ".configureAppSync] ";
 	
 	app
