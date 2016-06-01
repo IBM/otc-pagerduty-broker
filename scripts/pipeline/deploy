@@ -62,7 +62,7 @@ if ! cf map-route "$standbyApp" "$DOMAIN" -n "$testRoute"; then
    exit 1
 fi
 
-# Fetch from it's / route; displaying the conversation, but looking for
+# Fetch from it's /status route; displaying the conversation, but looking for
 # a 200 response code.
 #
 # -s: Disable the status bar.
@@ -71,7 +71,7 @@ fi
 # tee /dev/stderr: Copy the output to stderr so we see it in the pipeline log.
 # grep: Look for HTTP 200
 #
-curl -s -v "https://$testRoute.$DOMAIN" 2>&1 | \
+curl -s -v "https://$testRoute.$DOMAIN/status" 2>&1 | \
   tee /dev/stderr | \
   grep -q 'HTTP/.*200 OK'
 
