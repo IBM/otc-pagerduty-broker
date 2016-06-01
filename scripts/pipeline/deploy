@@ -24,7 +24,7 @@ cf delete "$standbyApp" -f
 # Create the app.
 #
 # Use NUM_INSTANCES envvar to override the number of instances.  Otherwise 1 will be used.
-cf push "$standbyApp" -i "${NUM_INSTANCES:-1}" -m 1G --no-route --no-start || exit 1
+cf push "$standbyApp" -i "${NUM_INSTANCES:-1}" -m "${MEMORY:-1G}" --no-route --no-start || exit 1
 
 # Copy all envvars with the prefix app_ or both_ to the app
 # we just deployed.
