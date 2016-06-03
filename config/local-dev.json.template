@@ -1,7 +1,6 @@
 {
 	"PORT": "4000",
 	"url": "http://localhost:4000",
-	"schemes": "http",
 	"services": {
 		"pagerduty": "https://pagerduty.com",
 		"otc_api": "https://localhost:3400/api/v1",
