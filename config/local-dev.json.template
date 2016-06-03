@@ -7,9 +7,6 @@
 		"otc_api": "https://localhost:3400/api/v1",
 		"ibm_snip_api" : "http://ibm.biz/api"
 	},
-	"_vcap_application": {
-		"application_uris":["localhost:4000"]
-	},
 	"_vcap_services": {
 		"cloudantNoSQLDB": [{
 			"credentials": {
