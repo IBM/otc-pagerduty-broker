@@ -70,6 +70,34 @@ exports.server = app;
 https.globalAgent.keepAlive = true;
 
 function validateConfSync() {
+	
+    // Verify that a list of keys this app expects are defined.
+    var requiredKeys = [
+        "PORT",
+        "url",
+        "TIAM_URL",
+        "TIAM_CLIENT_ID",
+        "OTC_API_BROKER_SECRET",
+        "services:pagerduty",
+        "services:otc_api",
+        "services:otc_ui",
+        "services:ibm_snip_api"
+    ];
+
+    var missingRequiredKeys = _.reject(requiredKeys, function (key) {
+        return nconf.get(key);
+    });
+
+    if (missingRequiredKeys.length > 0) {
+        util.log("ERROR: The following required configuration fields are missing:");
+        util.log(missingRequiredKeys.join(", "));
+        util.log("ERROR: ...these can be overridden using the following envvars:");
+        util.log(missingRequiredKeys.map(function (k) {
+            return k.replace(/:/g, "__");
+        }).join(", "));
+		process.exit(1);
+    }	
+	
 	/* Make sure that important bits of VCAP_SERVICES are defined. */
 	if (!nconf.get("_vcap_services:cloudantNoSQLDB:0:credentials:url")) {
 		util.log(
@@ -83,6 +111,9 @@ function validateConfSync() {
 function configureAppSync(db) {
 	var logPrefix = "[" + logBasePath + ".configureAppSync] ";
 	
+	var instanceUrl = url.parse(nconf.get("url"));
+	var scheme = instanceUrl.protocol.substring(0, instanceUrl.protocol.length - 1);
+
 	app
 	// If a request comes in that appears to be http, reject it.
 	.use(function (req, res, next) {
@@ -107,9 +138,9 @@ function configureAppSync(db) {
     
     .use("/swagger", swaggerUiMiddleware(
         _.extend(otcPagerDutyBrokerSwaggerSpec, {
-            "host": url.parse(nconf.get("url")).host
+        	"host": instanceUrl.host
         }, {
-            "schemes": nconf.get("schemes").split(",")
+        	"schemes": [scheme]
         })
     ))
     
@@ -118,29 +149,6 @@ function configureAppSync(db) {
 		req.servicesDb = db;
 		next();
 	})
-
-//	.get("/pagerduty-broker", function (req, res/*, next*/) {
-//		db.view("pagerduty", "service_instances", function (err, r) {
-//			var page = "" +
-//			"<!-- DOCTYPE: html -->\n" +
-//			"<html><head><title>PagerDuty Service</title></head><body>" +
-//			"<p>This is a broker for PagerDuty</p>" +
-//			"<table border='1'>"+
-//			"<tr><th>Service Instance Id</th><th>Parameters</th><th>Toolchain</th></tr>"+
-//			_.pluck(r.rows, "value").map(function (serviceInstance) {
-//				return "" +
-//				"<tr>" +
-//				"<td>" +  serviceInstance._id + "</td>" +
-//				"<td><pre>" +  JSON.stringify(serviceInstance.parameters, null, " ") + "</pre></td>" +
-//				"<td>" +  serviceInstance.toolchain_ids.join(",") + "</td>" +
-//				"</tr>";
-//			}).join("") +
-//			"</table>" +
-//			"</body></html>";
-//
-//			return res.send(page);
-//		});
-//	})
 
 	// OTC lifecycle operations (i.e. provision, bind, unprovision, unbind)
 	.use("/pagerduty-broker/api/v1/service_instances", require("./lib/middleware/service_instances"))
