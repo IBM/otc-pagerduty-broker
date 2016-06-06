@@ -1,11 +1,11 @@
 {
 	"PORT": "4000",
 	"url": "http://localhost:4000",
-	"schemes": "http",
 	"services": {
 		"pagerduty": "https://pagerduty.com",
 		"otc_api": "https://localhost:3400/api/v1",
-		"ibm_snip_api" : "http://ibm.biz/api"
+		"ibm_snip_api" : "http://ibm.biz/api",
+		"otc_ui": "http://localhost:3100/devops"
 	},
 	"_vcap_services": {
 		"cloudantNoSQLDB": [{
