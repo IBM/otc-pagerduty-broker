@@ -1,6 +1,6 @@
 /**
  * Licensed Materials - Property of IBM
- * (c) Copyright IBM Corporation 2015, 2015. All Rights Reserved.
+ * (c) Copyright IBM Corporation 2015, 2016. All Rights Reserved.
  *
  * Note to U.S. Government Users Restricted Rights:
  * Use, duplication or disclosure restricted by GSA ADP Schedule
@@ -35,8 +35,6 @@ var defaultHeaders = {
     'Accept': 'application/json,text/json',
     'Content-Type': 'application/json'
 };
-
-//var event_endpoints = {};
 
 var organization_guid = "some uuid";
 var mockServiceInstanceId = "1234";
@@ -791,14 +789,6 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', func
 		        t.equal(resultsFromBind.statusCode, 400, 'did the bind instance w/o toolchain_credentials failed?');
 			    putRequest(toolchainUrl, {header: header, body: JSON.stringify({toolchain_credentials: tiamCredentials.toolchain_credentials})}).then(function(resultsFromBind) {
 			        t.equal(resultsFromBind.statusCode, 204, 'did the bind instance to toolchain call succeed?');
-			        //t.comment(JSON.stringify(resultsFromBind));
-//			        if (_.isString(resultsFromBind.body.toolchain_lifecycle_webhook_url)) {
-//			            t.ok(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'did the toolchain_lifecycle_webhook_url value returned and valid ?');
-//			            t.comment("resultsFromBind="+ JSON.stringify(resultsFromBind));
-//			            event_endpoints.toolchain_lifecycle_webhook_url = resultsFromBind.body.toolchain_lifecycle_webhook_url;
-//			        } else {
-//			            t.notOk(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'is not a valid returned url for toolchain_lifecycle_webhook_url ?');            	
-//			        }
 			    });
 		    });
 		}
@@ -1042,9 +1032,6 @@ test(++testId + ' PagerDuty Broker - Delete Test TIAM Creds', function(t) {
 	    	tiamCredentials.service_credentials = null;
 	    });        		
 });
-
-
-
 
 // Monitoring endpoints
 test_(++testId + ' PagerDuty Broker - Test GET status', function (t) {

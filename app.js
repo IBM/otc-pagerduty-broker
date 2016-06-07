@@ -66,7 +66,7 @@ exports.configureMiddleware = function(externalCallback) {
 var app = express();
 exports.server = app;
 
-// enable connection pooling
+// Enable connection pooling
 https.globalAgent.keepAlive = true;
 
 function validateConfSync() {
@@ -199,8 +199,6 @@ function createDb(callback) {
 
 function initOrUpdateDesign(db, callback) {
 	var DESIGN_DOC_NAME = "_design/pagerduty";
-	/* If this was a real program, I'd probably isolate the design doc to its own source file.
-	   sucks there's no way to turn off a global directive. */
 
 	/* global emit */
 	var DESIGN_DOC = {
