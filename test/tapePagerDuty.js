@@ -49,8 +49,8 @@ var header = {};
 
 var currentTime = new Date().valueOf();
 
-var pagerdutySiteName = nconf.get("pagerduty-site-name");
-var pagerdutyApiKey = nconf.get("pagerduty-api-key");
+var pagerdutySiteName = nconf.get("pagerduty_site_name");
+var pagerdutyApiKey = nconf.get("pagerduty_api_key");
 var pagerdutyDefaultHeaders = {'Authorization': 'Token token=' + pagerdutyApiKey};
 var pagerdutyApiUrl = "https://" + pagerdutySiteName + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
 
@@ -192,7 +192,7 @@ test_(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
 test_(++testId + ' PagerDuty Broker - Create Test TIAM Creds', function(t) {
 	t.plan(3);
 	var tiamHeader = {};
-	tiamHeader.Authorization = "Basic " + new Buffer(nconf.get("test-tiam-id") + ":" + nconf.get("test-tiam-secret")).toString('base64');
+	tiamHeader.Authorization = "Basic " + new Buffer(nconf.get("test_tiam_id") + ":" + nconf.get("test_tiam_secret")).toString('base64');
 	// Create a service credentials
 	var url = nconf.get("TIAM_URL") + '/service/manage/pagerduty/' + mockServiceInstanceId;
 	//t.comment(url);
@@ -531,8 +531,8 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update instance with site_name 
 		function(callback) {
 			// patch site_name and api_key
 		    var body = {};
-		    var pagerdutySiteName2 = nconf.get("pagerduty-site-name-2");
-		    var pagerdutyApiKey2 = nconf.get("pagerduty-api-key-2");
+		    var pagerdutySiteName2 = nconf.get("pagerduty_site_name_2");
+		    var pagerdutyApiKey2 = nconf.get("pagerduty_api_key_2");
 		    body.parameters = {
 		    	"site_name": pagerdutySiteName2,
 		    	"api_key": pagerdutyApiKey2
@@ -1015,7 +1015,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 test(++testId + ' PagerDuty Broker - Delete Test TIAM Creds', function(t) {
 	t.plan(2);
 	var tiamHeader = {};
-	tiamHeader.Authorization = "Basic " + new Buffer(nconf.get("test-tiam-id") + ":" + nconf.get("test-tiam-secret")).toString('base64');
+	tiamHeader.Authorization = "Basic " + new Buffer(nconf.get("test_tiam_id") + ":" + nconf.get("test_tiam_secret")).toString('base64');
 	
     // Delete a toolchain credentials
     var url = nconf.get("TIAM_URL") + '/service/manage/slack/' + mockServiceInstanceId + "/" + mockToolchainId;
