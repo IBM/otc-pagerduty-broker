@@ -1,6 +1,6 @@
 /**
  * Licensed Materials - Property of IBM
- * (c) Copyright IBM Corporation 2015, 2015. All Rights Reserved.
+ * (c) Copyright IBM Corporation 2015, 2016. All Rights Reserved.
  *
  * Note to U.S. Government Users Restricted Rights:
  * Use, duplication or disclosure restricted by GSA ADP Schedule
@@ -36,8 +36,6 @@ var defaultHeaders = {
     'Content-Type': 'application/json'
 };
 
-//var event_endpoints = {};
-
 var organization_guid = "some uuid";
 var mockServiceInstanceId = "1234";
 var mockToolchainId = "c234adsf-111";
@@ -51,8 +49,8 @@ var header = {};
 
 var currentTime = new Date().valueOf();
 
-var pagerdutySiteName = nconf.get("pagerduty-site-name");
-var pagerdutyApiKey = nconf.get("pagerduty-api-key");
+var pagerdutySiteName = nconf.get("pagerduty_site_name");
+var pagerdutyApiKey = nconf.get("pagerduty_api_key");
 var pagerdutyDefaultHeaders = {'Authorization': 'Token token=' + pagerdutyApiKey};
 var pagerdutyApiUrl = "https://" + pagerdutySiteName + '.' + nconf.get("services:pagerduty").substring("https://".length) + "/api/v1";
 
@@ -194,7 +192,7 @@ test_(++testId + ' PagerDuty Broker - Test Authentication', function (t) {
 test_(++testId + ' PagerDuty Broker - Create Test TIAM Creds', function(t) {
 	t.plan(3);
 	var tiamHeader = {};
-	tiamHeader.Authorization = "Basic " + new Buffer(nconf.get("test-tiam-id") + ":" + nconf.get("test-tiam-secret")).toString('base64');
+	tiamHeader.Authorization = "Basic " + new Buffer(nconf.get("test_tiam_id") + ":" + nconf.get("test_tiam_secret")).toString('base64');
 	// Create a service credentials
 	var url = nconf.get("TIAM_URL") + '/service/manage/pagerduty/' + mockServiceInstanceId;
 	//t.comment(url);
@@ -533,8 +531,8 @@ test_(++testId + ' PagerDuty Broker - Test PATCH update instance with site_name 
 		function(callback) {
 			// patch site_name and api_key
 		    var body = {};
-		    var pagerdutySiteName2 = nconf.get("pagerduty-site-name-2");
-		    var pagerdutyApiKey2 = nconf.get("pagerduty-api-key-2");
+		    var pagerdutySiteName2 = nconf.get("pagerduty_site_name_2");
+		    var pagerdutyApiKey2 = nconf.get("pagerduty_api_key_2");
 		    body.parameters = {
 		    	"site_name": pagerdutySiteName2,
 		    	"api_key": pagerdutyApiKey2
@@ -791,14 +789,6 @@ test_(++testId + ' PagerDuty Broker - Test PUT bind instance to toolchain', func
 		        t.equal(resultsFromBind.statusCode, 400, 'did the bind instance w/o toolchain_credentials failed?');
 			    putRequest(toolchainUrl, {header: header, body: JSON.stringify({toolchain_credentials: tiamCredentials.toolchain_credentials})}).then(function(resultsFromBind) {
 			        t.equal(resultsFromBind.statusCode, 204, 'did the bind instance to toolchain call succeed?');
-			        //t.comment(JSON.stringify(resultsFromBind));
-//			        if (_.isString(resultsFromBind.body.toolchain_lifecycle_webhook_url)) {
-//			            t.ok(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'did the toolchain_lifecycle_webhook_url value returned and valid ?');
-//			            t.comment("resultsFromBind="+ JSON.stringify(resultsFromBind));
-//			            event_endpoints.toolchain_lifecycle_webhook_url = resultsFromBind.body.toolchain_lifecycle_webhook_url;
-//			        } else {
-//			            t.notOk(resultsFromBind.body.toolchain_lifecycle_webhook_url, 'is not a valid returned url for toolchain_lifecycle_webhook_url ?');            	
-//			        }
 			    });
 		    });
 		}
@@ -1025,7 +1015,7 @@ test_(++testId + ' PagerDuty Broker - Test DELETE unbind instance from toolchain
 test(++testId + ' PagerDuty Broker - Delete Test TIAM Creds', function(t) {
 	t.plan(2);
 	var tiamHeader = {};
-	tiamHeader.Authorization = "Basic " + new Buffer(nconf.get("test-tiam-id") + ":" + nconf.get("test-tiam-secret")).toString('base64');
+	tiamHeader.Authorization = "Basic " + new Buffer(nconf.get("test_tiam_id") + ":" + nconf.get("test_tiam_secret")).toString('base64');
 	
     // Delete a toolchain credentials
     var url = nconf.get("TIAM_URL") + '/service/manage/slack/' + mockServiceInstanceId + "/" + mockToolchainId;
@@ -1042,9 +1032,6 @@ test(++testId + ' PagerDuty Broker - Delete Test TIAM Creds', function(t) {
 	    	tiamCredentials.service_credentials = null;
 	    });        		
 });
-
-
-
 
 // Monitoring endpoints
 test_(++testId + ' PagerDuty Broker - Test GET status', function (t) {

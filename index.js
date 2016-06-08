@@ -1,6 +1,6 @@
 /**
  * Licensed Materials - Property of IBM
- * (c) Copyright IBM Corporation 2015, 2015. All Rights Reserved.
+ * (c) Copyright IBM Corporation 2015, 2016. All Rights Reserved.
  *
  * Note to U.S. Government Users Restricted Rights:
  * Use, duplication or disclosure restricted by GSA ADP Schedule
@@ -9,15 +9,15 @@
 "use strict";
 
 /******************* Begin Synchronous App Configuration **********************/
-//configure nconf and logging early
+// Configure nconf and logging early
 var nconf = require("nconf"),
 	log4js = require("log4js"),
  	util = require('util');
 
-//Configuration for nconf
+// Configuration for nconf
 populateNconfSync();
 
-//Configuration for logging
+// Configuration for logging
 log4js.configure("./config/log4js.json", {
     reloadSecs: 30
 });
@@ -25,7 +25,7 @@ log4js.configure("./config/log4js.json", {
 var logger = log4js.getLogger("otc-pagerduty-broker"),
  	logBasePath = "index";
 
-// check if log level has not been overridden
+// Check if log level has not been overridden
 var level = nconf.get("LOG4J_LEVEL");
 if (level && level.length > 0)
 	logger.setLevel(level);
@@ -33,7 +33,7 @@ if (level && level.length > 0)
 /******************** End Synchronous App Configuration ***********************/
 
 /************* Begin Application Performance Monitoring config ****************/
-//require new relic before any middleware (especially express).
+// Require new relic before any middleware (especially express).
 var enableNewRelic = nconf.get('ENABLE_NEW_RELIC');
 if (enableNewRelic == 'true') {
     logger.info('New Relic configuring');
