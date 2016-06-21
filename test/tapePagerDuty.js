@@ -513,6 +513,24 @@ test_(++testId + ' PagerDuty Broker - Test PUT instance missing email and phone 
     });
 });
 
+test_(++testId + ' PagerDuty Broker - Test PUT instance with qualified site name', function (t) {
+    t.plan(19);
+
+    var pagerduty = getTestPagerDutyInfo();
+    var body = getNewInstanceBody(pagerduty);
+    body.parameters.site_name = "https://" + body.parameters.site_name + ".pagerduty.com";
+    putServiceInstance(serviceInstanceUrl, header, body, function(results) {
+        t.equal(results.statusCode, 200, 'did the put instance call succeed?');
+        t.ok(results.body.instance_id, 'did the put instance call return an instance_id?');
+        
+        // Ensure PagerDuty service and user have been created
+        assertServiceAndUser(pagerduty, t);
+        
+        // Ensure dashboard url is accessible
+        assertDashboardAccessible(results.body, t);
+    });
+});
+
 // Patch tests
 test_(++testId + ' PagerDuty Broker - Test PATCH update instance with site_name and api_key', function (t) {
     t.plan(20);
