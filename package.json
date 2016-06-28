@@ -4,6 +4,10 @@
   "contributors": [
     "Benoit Jaunin <jauninb@fr.ibm.com>"
   ],
+  "engines": {
+    "node": "4.3.2",
+    "npm": "3.8.0"
+  },
   "dependencies": {
     "agentkeepalive": "0.2.3",
     "async": "1.5.0",
