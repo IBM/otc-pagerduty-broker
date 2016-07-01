@@ -31,8 +31,11 @@ Local Usage
     # Edit config/local-dev.json and update the following:
     - Replace CLOUDANT_URL with your Cloudant URL:
         https://<cloudant id>:<cloudant pw>@<cloudant id>.cloudant.com
-    - Provide values for TIAM* properties
-    - Provide value for IBM_SNIP_API_KEY (see http://ibm.biz/api for obtaining such key)
+    - Provide values for TIAM* properties:
+           Contact Simon H for Stage1 values.
+    - Update services:
+        Use the URLs according to your environment
+    - Provide value for IBM_SNIP_API_KEY (this creates the short URL for the user - see http://ibm.biz/api for obtaining such key)
 
     # Tell the broker to use your local config
     export NODE_ENV=local-dev
@@ -42,10 +45,27 @@ Local Usage
     
     # Start the node app
     npm start
+
+    # Create a test configuration from the provided template 
+    cp config/testUtils.json.template config/testUtils.json
+
+    # Edit config/testUtils.json and update the following:
+    - pagerduty site_name and api_key (corresponding to the configuration for test user)
+    - test_tiam_id and test_tiam_secret (TIAM properties required to invoke the broker API)
     
     # To run the tests, run:
     npm test
+    
+    Note: test configuration
 
+
+Dependencies
+------------
+The PagerDuty Broker has the following dependencies:
+- Cloudant
+- IBM Snip API
+- PagerDuty
+- TIAM
 
 Logging
 -------
@@ -54,6 +74,7 @@ To configure the logging levels and output location, modify the config/log4js.js
 The `request` filter will output Express requests.
 The `otc-pagerduty-broker` filter indicates any logging for this component.
 Note: Environment variable LOG4J_LEVEL can be set to change the logging level for otc-pagerduty-broker filter at runtime
+
 
 # API
 

@@ -850,8 +850,8 @@
     },
     "log4js-syslog-appender": {
       "version": "0.2.0",
-      "from": "git+https://github.ibm.com/org-ids/node-log4js-syslog-appender#v0.2.0",
-      "resolved": "git+https://github.ibm.com/org-ids/node-log4js-syslog-appender#5c319f05ab1ab526120aaafac7e1cad4ed0ee7d1",
+      "from": "git+https://github.com/IBM/node-log4js-syslog-appender.git#v0.2.0",
+      "resolved": "git+https://github.com/IBM/node-log4js-syslog-appender.git#5c319f05ab1ab526120aaafac7e1cad4ed0ee7d1",
       "dependencies": {
         "log4js": {
           "version": "0.6.37",
@@ -954,8 +954,8 @@
     },
     "nano-doc-updater": {
       "version": "0.0.3",
-      "from": "git+https://github.ibm.com/org-ids/node-nano-doc-updater#v0.0.1",
-      "resolved": "git+https://github.ibm.com/org-ids/node-nano-doc-updater#edfe0f8c815998a1bf2269b74924d37ddb3a48e0"
+      "from": "git+https://github.com/IBM/node-nano-doc-updater.git#v0.0.1",
+      "resolved": "git+https://github.com/IBM/node-nano-doc-updater.git#edfe0f8c815998a1bf2269b74924d37ddb3a48e0"
     },
     "nconf": {
       "version": "0.8.2",
@@ -1471,8 +1471,8 @@
     },
     "swagger-ui-middleware": {
       "version": "0.0.1",
-      "from": "git+https://github.ibm.com/org-ids/node-swagger-ui-middleware#v1.1.0",
-      "resolved": "git+https://github.ibm.com/org-ids/node-swagger-ui-middleware#d3398655671a9d4e36d6484712bdf638c11adafa"
+      "from": "git+https://github.com/IBM/node-swagger-ui-middleware.git#v1.1.0",
+      "resolved": "git+https://github.com/IBM/node-swagger-ui-middleware.git#d3398655671a9d4e36d6484712bdf638c11adafa"
     },
     "tap-out": {
       "version": "1.4.2",
