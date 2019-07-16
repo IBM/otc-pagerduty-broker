@@ -21,7 +21,7 @@
     "nano-doc-updater": "git+https://github.com/IBM/node-nano-doc-updater#v0.0.1",
     "nconf": "0.8.2",
     "newrelic": "^1.25.1",
-    "request": "2.67.0",
+    "request": "2.68.0",
     "swagger-ui-middleware": "git+https://github.com/IBM/node-swagger-ui-middleware#v1.1.0",
     "underscore": "1.8.3"
   },
