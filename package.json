@@ -23,7 +23,7 @@
     "newrelic": "^1.25.1",
     "request": "2.68.0",
     "swagger-ui-middleware": "git+https://github.com/IBM/node-swagger-ui-middleware#v1.1.0",
-    "underscore": "1.8.3"
+    "underscore": "1.12.1"
   },
   "devDependencies": {
     "nock": "5.2.1",
